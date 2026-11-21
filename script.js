@@ -192,18 +192,18 @@ function theme() {
 
       // основа: океан темнее и глубже, суша светлее
       vec3 col=mix(vec3(0.020,0.032,0.070),vec3(0.003,0.010,0.034),water);
-      col+=c*1.25;
+      col+=c*0.95;
       col+=land*(h*vec3(0.035,0.05,0.09)+shade*vec3(0.20,0.30,0.55));
       // огни городов: тёплые, с мягким ореолом
       float lum=max(c.r,max(c.g,c.b));
       float lights=smoothstep(0.22,0.85,lum);
-      col+=lights*vec3(1.0,0.74,0.42)*0.95+glow*vec3(1.0,0.72,0.42)*1.7;
+      col+=lights*vec3(1.0,0.74,0.42)*0.6+glow*vec3(1.0,0.72,0.45)*0.95;
 
       // облака лунного света, медленно дрейфуют
-      float ca=time*0.012, cs=sin(ca), cc=cos(ca);
+      float ca=time*0.006, cs=sin(ca), cc=cos(ca);
       vec3 q=vec3(cc*vObj.x+cs*vObj.z,vObj.y,-cs*vObj.x+cc*vObj.z)*3.2;
-      float cl=smoothstep(0.50,0.80,fbm(q)*0.75+fbm(q*2.1+7.0)*0.35);
-      col=col*(1.0-0.45*cl)+cl*vec3(0.07,0.095,0.15);
+      float cl=smoothstep(0.46,0.74,fbm(q)*0.75+fbm(q*2.1+7.0)*0.35);
+      col=mix(col*(1.0-0.5*cl),vec3(0.20,0.24,0.33),cl*0.8);
 
       // океан: холодный блик и сияние у горизонта
       vec3 H=normalize(L+V);
@@ -213,7 +213,8 @@ function theme() {
       // тонкий атмосферный слой на самой кромке
       float f=1.0-ndv;
       float side=0.65+0.55*smoothstep(-0.2,0.9,dot(normalize(n.xy+vec2(0.0001)),normalize(vec2(-0.5,0.8))));
-      col+=(vec3(0.10,0.34,1.0)*pow(f,3.0)*0.55+vec3(0.55,0.85,1.0)*pow(f,7.0)*1.1)*side;
+      col+=(vec3(0.10,0.30,0.80)*pow(f,4.0)*0.30+vec3(0.45,0.70,0.95)*pow(f,9.0)*0.45)*side;
+      col=1.0-exp(-col*1.15);
 
       col+=(fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-0.5)/255.0;   // против полос
       gl_FragColor=vec4(col,1.0);
@@ -226,10 +227,10 @@ function theme() {
       float h=max(length(q)/PS-1.0,0.0);
       vec3 qn=normalize(q);
       float side=0.55+0.75*smoothstep(-0.3,0.9,dot(qn.xy,normalize(vec2(-0.5,0.8))));   // сторона к «солнцу» ярче
-      float rim=exp(-h*60.0), mid=exp(-h*15.0), far=exp(-h*5.5);
-      vec3 col=(vec3(0.60,0.88,1.0)*rim*0.9+vec3(0.16,0.48,1.0)*mid*0.50+vec3(0.04,0.16,0.80)*far*0.20)*side;
+      float rim=exp(-h*80.0), mid=exp(-h*20.0), far=exp(-h*6.5);
+      vec3 col=(vec3(0.50,0.76,1.0)*rim*0.42+vec3(0.18,0.42,0.92)*mid*0.20+vec3(0.04,0.14,0.60)*far*0.07)*side;
       col+=(fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-0.5)/255.0;
-      gl_FragColor=vec4(max(col,0.0),clamp((col.r+col.g+col.b)*0.22,0.0,1.0));
+      gl_FragColor=vec4(max(col,0.0),clamp((col.r+col.g+col.b)*0.16,0.0,1.0));
     }`;
 
   function prog(fs) {
@@ -325,13 +326,13 @@ function theme() {
   }
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let spin = -2.1, time = 0, last = performance.now(), visible = true;
+  let spin = -3.2, time = 0, last = performance.now(), visible = true;
   new IntersectionObserver(e => { visible = e[0].isIntersecting; }).observe(hero);
   (function loop(t) {
     requestAnimationFrame(loop);
     if (!visible || !mapReady) { last = t; return; }
     const dt = Math.min((t - last) / 1000, 0.1); last = t;
-    if (!reduce) { spin += dt * 0.028; time += dt; }        // медленное вращение с запада на восток
+    if (!reduce) { spin += dt * 0.012; time += dt; }        // медленное вращение с запада на восток
     const R = rot(-0.25, -0.41, spin);                       // наклон оси 23.4°, как у глобуса
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE);
