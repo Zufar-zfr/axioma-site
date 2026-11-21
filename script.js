@@ -52,6 +52,8 @@ const sky = (function () {
   let last = performance.now();
   function frame(t) {
     const dt = Math.min((t - last) / 1000, .05); last = t;
+    if (!REDUCE && !document.hidden) requestAnimationFrame(frame);
+    if (scrollY < innerHeight * .9) return;                  // небо закрыто первым экраном — не тратим ресурсы
     ctx.clearRect(0, 0, w, h);
     const sy = scrollY * d;
     ctx.fillStyle = "#cfe0ff";
@@ -81,11 +83,11 @@ const sky = (function () {
       ctx.fillStyle = "#cfe0ff";
     }
     ctx.globalAlpha = 1;
-    if (!REDUCE && !document.hidden) requestAnimationFrame(frame);
   }
   addEventListener("resize", resize); resize();
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !REDUCE) { last = performance.now(); requestAnimationFrame(frame); } });
   requestAnimationFrame(frame);
+  if (REDUCE) addEventListener("scroll", () => frame(performance.now()), { passive: true });
   return { comet, prog };
 })();
 
@@ -148,7 +150,7 @@ document.querySelectorAll(".svc").forEach(c => c.addEventListener("pointermove",
 /* ---------- звёзды на первом экране ---------- */
 (function heroStars() {
   const c = document.getElementById("heroStars"); if (!c) return;
-  const ctx = c.getContext("2d"); let w, h, pts = [];
+  const ctx = c.getContext("2d"); let w, h, pts = [], on = true, last = 0;
   function resize() {
     const r = c.getBoundingClientRect(), d = DPR();
     w = c.width = r.width * d; h = c.height = r.height * d;
@@ -157,14 +159,17 @@ document.querySelectorAll(".svc").forEach(c => c.addEventListener("pointermove",
       p: Math.random() * 6.28, s: .3 + Math.random() }));
   }
   function draw(t) {
+    if (!REDUCE) requestAnimationFrame(draw);
+    if (!on || t - last < 41) return;                       // ~24 кадров/с достаточно для мерцания
+    last = t;
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#d8e6ff";
     for (const p of pts) {
       ctx.globalAlpha = .45 + .5 * (.5 + .5 * Math.sin(p.p + t * .0011 * p.s));
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
     }
-    if (!REDUCE) requestAnimationFrame(draw);
   }
+  new IntersectionObserver(e => { on = e[0].isIntersecting; }).observe(c.parentElement);
   addEventListener("resize", resize); resize(); requestAnimationFrame(draw);
 })();
 
@@ -199,13 +204,9 @@ addEventListener("resize", onScroll);
 addEventListener("load", onScroll);
 onScroll();
 
-/* ---------- видео Земли: старт над Украиной/Турцией, пауза вне экрана ---------- */
+/* ---------- видео Земли: ролик уже начинается с нужного места; пауза вне экрана ---------- */
 (function earthVideo() {
-  const v = document.querySelector(".earth__video"); if (!v || REDUCE) return;   // при «уменьшить анимацию» остаётся постер
-  const START = 136;                       // секунда ролика: в центре Чёрное море и огни Европы
-  let inView = true;
-  const play = () => { if (inView) v.play().catch(() => {}); };
-  const begin = () => { v.currentTime = START; v.addEventListener("seeked", play, { once: true }); };
-  v.readyState >= 1 ? begin() : v.addEventListener("loadedmetadata", begin, { once: true });
-  new IntersectionObserver(e => { inView = e[0].isIntersecting; inView ? play() : v.pause(); }).observe(document.querySelector(".hero"));
+  const v = document.querySelector(".earth__video"); if (!v) return;
+  if (REDUCE) { v.removeAttribute("autoplay"); v.pause(); return; }       // остаётся постер
+  new IntersectionObserver(e => { e[0].isIntersecting ? v.play().catch(() => {}) : v.pause(); }).observe(document.querySelector(".hero"));
 })();
