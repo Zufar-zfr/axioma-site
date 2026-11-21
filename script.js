@@ -70,7 +70,7 @@ if (clock) setInterval(() => clock.textContent = new Date().toISOString().slice(
 })();
 
 /* ===== Цветовая тема: оттенок плавно меняется по ходу прокрутки ===== */
-const PALETTE = [210, 165, 268, 322, 28, 188];   // синий, бирюзовый, фиолетовый, розовый, оранжевый, голубой
+const PALETTE = [210];   // один синий оттенок
 let hue = 210;
 const HUE = () => hue;
 function theme() {
@@ -149,70 +149,118 @@ function theme() {
   frame();
 })();
 
-/* ===== Настоящий 3D-шар Земли: карта на сфере, вращение вокруг оси ===== */
+/* ===== 3D-шар Земли на чистом WebGL (без библиотек): карта на сфере, вращение вокруг оси ===== */
 (function globe() {
   const hero = document.querySelector(".hero"), canvas = document.getElementById("globe");
   if (!hero || !canvas) return;
-  try {
-    if (typeof THREE === "undefined") throw new Error("no three");
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100); camera.position.z = 5;
+  const fail = e => { console.warn("Земля: запасной режим", e); hero.classList.add("no-webgl"); };
+  const gl = canvas.getContext("webgl", { alpha: true, antialias: true, premultipliedAlpha: true });
+  if (!gl || !window.EARTH_LO) return fail("no webgl");
 
-    const tex = new THREE.TextureLoader().load("assets/earth-map.jpg", () => canvas.classList.add("is-ready"));
-    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    const uTint = { value: new THREE.Color(0.2, 0.5, 1) };
+  const VS = `attribute vec3 p; attribute vec2 t; uniform mat3 R; uniform mat4 P; uniform float S; uniform vec3 O;
+    varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+    void main(){ vUv=t; vN=R*p; vec3 v=R*(p*S)+O; vV=normalize(-v); gl_Position=P*vec4(v,1.); }`;
+  const EARTH_FS = `precision mediump float; uniform sampler2D map; uniform vec3 tint; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+    void main(){
+      vec3 c=texture2D(map,vUv).rgb;
+      vec3 col=vec3(0.012,0.025,0.06)+tint*0.05+c*mix(vec3(2.0),vec3(2.0)*(0.55+tint),0.35);
+      float f=pow(1.-max(dot(normalize(vN),normalize(vV)),0.),3.5);
+      gl_FragColor=vec4(col+tint*f*0.9,1.); }`;
+  const ATMO_FS = `precision mediump float; uniform vec3 tint; varying vec3 vN; varying vec3 vV;
+    void main(){ float d=-dot(normalize(vN),normalize(vV)); float i=pow(smoothstep(0.0,0.5,d),2.2);
+      gl_FragColor=vec4(tint*i*0.6,i*0.6); }`;
 
-    const group = new THREE.Group(); scene.add(group);
-    group.add(new THREE.Mesh(new THREE.SphereGeometry(1, 128, 128), new THREE.ShaderMaterial({
-      uniforms: { map: { value: tex }, tint: uTint },
-      vertexShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vV;
-        void main(){ vUv=uv; vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
-      fragmentShader: `uniform sampler2D map; uniform vec3 tint; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
-        void main(){
-          vec3 c=texture2D(map,vUv).rgb;
-          vec3 col=vec3(0.012,0.025,0.06)+tint*0.05+c*mix(vec3(2.0),vec3(2.0)*(0.55+tint),0.35);
-          float f=pow(1.-max(dot(normalize(vN),normalize(vV)),0.),3.5);
-          col+=tint*f*0.9;
-          gl_FragColor=vec4(col,1.);
-        }` })));
-
-    const atmo = new THREE.Mesh(new THREE.SphereGeometry(1.1, 96, 96), new THREE.ShaderMaterial({
-      uniforms: { tint: uTint }, transparent: true, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false,
-      vertexShader: `varying vec3 vN; varying vec3 vV;
-        void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
-      fragmentShader: `uniform vec3 tint; varying vec3 vN; varying vec3 vV;
-        void main(){ float d=-dot(normalize(vN),normalize(vV)); float i=pow(smoothstep(0.0,0.5,d),2.2);
-          gl_FragColor=vec4(tint,1.)*i*1.1; }` }));
-    scene.add(atmo);
-
-    group.rotation.x = -0.3; group.rotation.z = -0.08; group.rotation.y = -2.1;
-
-    function resize() {
-      const w = hero.clientWidth, h = hero.clientHeight;
-      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-      const vh = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), vw = vh * camera.aspect;
-      const s = Math.max(vw * 0.72, vh * 0.7);
-      const topY = vh / 2 - vh * (w < 700 ? 0.58 : 0.46);
-      group.scale.setScalar(s); atmo.scale.setScalar(s); group.position.y = atmo.position.y = topY - s;
-    }
-    addEventListener("resize", resize); resize();
-
-    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let last = performance.now(), visible = true;
-    new IntersectionObserver(e => visible = e[0].isIntersecting).observe(hero);
-    const col = new THREE.Color();
-    (function loop(t) {
-      requestAnimationFrame(loop);
-      if (!visible) { last = t; return; }
-      const dt = (t - last) / 1000; last = t;
-      if (!reduce) group.rotation.y += dt * 0.05;          // вращение вокруг оси с запада на восток
-      col.setHSL((hue % 360) / 360, 0.95, 0.55); uTint.value.copy(col);
-      renderer.render(scene, camera);
-    })(last);
-  } catch (err) {
-    console.warn("WebGL недоступен, показываем плоское фото", err);
-    hero.classList.add("no-webgl");
+  function prog(fs) {
+    const mk = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+    const pr = gl.createProgram(); gl.attachShader(pr, mk(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, mk(gl.FRAGMENT_SHADER, fs));
+    gl.bindAttribLocation(pr, 0, "p"); gl.bindAttribLocation(pr, 1, "t"); gl.linkProgram(pr);
+    const u = {}; ["R", "P", "S", "O", "map", "tint"].forEach(n => u[n] = gl.getUniformLocation(pr, n)); return { pr, u };
   }
+  let earth, atmo;
+  try { earth = prog(EARTH_FS); atmo = prog(ATMO_FS); } catch (e) { return fail(e); }
+
+  // сфера: u — долгота, v — широта
+  const N = 96, pos = [], uv = [], idx = [];
+  for (let y = 0; y <= N; y++) for (let x = 0; x <= N; x++) {
+    const u = x / N, v = y / N, phi = u * 2 * Math.PI, th = v * Math.PI;
+    pos.push(-Math.cos(phi) * Math.sin(th), Math.cos(th), Math.sin(phi) * Math.sin(th)); uv.push(u, 1 - v);
+  }
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const a = y * (N + 1) + x, b = a + N + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const buf = (data, T, A) => { const b = gl.createBuffer(); gl.bindBuffer(T, b); gl.bufferData(T, new A(data), gl.STATIC_DRAW); return b; };
+  const bPos = buf(pos, gl.ARRAY_BUFFER, Float32Array), bUv = buf(uv, gl.ARRAY_BUFFER, Float32Array), bIdx = buf(idx, gl.ELEMENT_ARRAY_BUFFER, Uint16Array);
+
+  // текстура: сначала лёгкая версия, затем полная
+  const tex = gl.createTexture(); let texReady = false;
+  function setTex(src) {
+    const img = new Image();
+    img.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      const ext = gl.getExtension("EXT_texture_filter_anisotropic");
+      if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+      texReady = true;
+    };
+    img.onerror = () => { if (!texReady) fail("texture"); };
+    img.src = src;
+  }
+  setTex(window.EARTH_LO);
+  const hi = document.createElement("script"); hi.src = "assets/earth-hi.js";
+  hi.onload = () => { if (window.EARTH_HI) setTex(window.EARTH_HI); };
+  addEventListener("load", () => document.head.appendChild(hi));
+
+  // матрицы
+  const FOV = 35 * Math.PI / 180, CAMZ = 5;
+  const P = new Float32Array(16); let S = 1, Oy = 0;
+  function resize() {
+    const d = Math.min(devicePixelRatio || 1, 2), w = hero.clientWidth, h = hero.clientHeight;
+    canvas.width = w * d; canvas.height = h * d; gl.viewport(0, 0, canvas.width, canvas.height);
+    const a = w / h, f = 1 / Math.tan(FOV / 2), n = 0.1, fa = 100;
+    P.set([f / a, 0, 0, 0, 0, f, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, 2 * fa * n / (n - fa), 0]);
+    const vh = 2 * CAMZ * Math.tan(FOV / 2), vw = vh * a;
+    S = Math.max(vw * 0.72, vh * 0.7);
+    Oy = (vh / 2 - vh * (w < 700 ? 0.58 : 0.46)) - S;
+  }
+  addEventListener("resize", resize); resize();
+
+  function mul(a, b) { const r = new Array(9); for (let c = 0; c < 3; c++) for (let rr = 0; rr < 3; rr++) { let s = 0; for (let k = 0; k < 3; k++) s += a[k * 3 + rr] * b[c * 3 + k]; r[c * 3 + rr] = s; } return r; }
+  function rot(ax, ay, az) {                        // R = Rx * Ry * Rz (столбцы, как в three.js)
+    const cx = Math.cos(ax), sx = Math.sin(ax), cy = Math.cos(ay), sy = Math.sin(ay), cz = Math.cos(az), sz = Math.sin(az);
+    const Rx = [1, 0, 0, 0, cx, sx, 0, -sx, cx], Ry = [cy, 0, -sy, 0, 1, 0, sy, 0, cy], Rz = [cz, sz, 0, -sz, cz, 0, 0, 0, 1];
+    return new Float32Array(mul(Rx, mul(Ry, Rz)));
+  }
+  function draw(pg, R, tint, atmosphere) {
+    gl.useProgram(pg.pr);
+    gl.uniformMatrix3fv(pg.u.R, false, R); gl.uniformMatrix4fv(pg.u.P, false, P);
+    gl.uniform1f(pg.u.S, atmosphere ? S * 1.1 : S); gl.uniform3f(pg.u.O, 0, Oy, -CAMZ);
+    gl.uniform3f(pg.u.tint, tint[0], tint[1], tint[2]);
+    if (!atmosphere) { gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.uniform1i(pg.u.map, 0); }
+    gl.bindBuffer(gl.ARRAY_BUFFER, bPos); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bUv); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bIdx); gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
+  }
+
+  const tint = [0.07, 0.40, 1.0];                   // синий оттенок свечения
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let ry = -2.1, last = performance.now(), visible = true;
+  new IntersectionObserver(e => { visible = e[0].isIntersecting; }).observe(hero);
+  (function loop(t) {
+    requestAnimationFrame(loop);
+    if (!visible || !texReady) { last = t; return; }
+    const dt = (t - last) / 1000; last = t;
+    if (!reduce) ry += dt * 0.05;                   // вращение вокруг оси с запада на восток
+    const R = rot(-0.3, ry, -0.08);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE);
+    gl.disable(gl.BLEND); gl.cullFace(gl.BACK); gl.depthMask(true);
+    draw(earth, R, tint, false);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.cullFace(gl.FRONT); gl.depthMask(false);
+    draw(atmo, R, tint, true);
+  })(last);
 })();
