@@ -192,7 +192,7 @@ main,.footer{position:relative;z-index:1}
 
 /* ---------- о компании ---------- */
 .statement{font-size:clamp(24px,2.6vw,36px);line-height:1.35;letter-spacing:-.02em;font-weight:500;max-width:980px;color:#cfd6e4}
-.roadmap{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:88px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.roadmap{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:22px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden}
 .roadmap li{background:var(--bg);padding:34px 32px 38px}
 .roadmap__year{display:block;font:500 40px/1 var(--mono);letter-spacing:-.02em;color:var(--dim);margin-bottom:22px;transition:color .8s,text-shadow .8s}
 .roadmap li.is-in .roadmap__year{color:var(--text);text-shadow:0 0 24px rgba(90,169,255,.35)}
@@ -307,4 +307,46 @@ main,.footer{position:relative;z-index:1}
   *,*::before,*::after{animation:none!important;transition:none!important}
   .js .reveal{opacity:1;transform:none}
   html{scroll-behavior:auto}
+}
+
+/* ---------- второй кейс: сайт в окне браузера ---------- */
+.case--rev{margin-top:120px}
+.case--rev .case__info{order:0}
+.case__media--site{height:auto;min-height:0;display:flex;align-items:center}
+.site-shot{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#fff;border:1px solid var(--line-2);
+  box-shadow:0 40px 80px -24px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.5);will-change:transform}
+.site-shot__bar{display:flex;align-items:center;gap:6px;padding:11px 14px;background:#10141f;border-bottom:1px solid var(--line)}
+.site-shot__bar i{width:9px;height:9px;border-radius:50%;background:#2b3243}
+.site-shot__bar span{margin-left:12px;flex:1;max-width:260px;padding:4px 14px;border-radius:7px;background:#070a12;color:var(--muted);font:500 11px/1.4 var(--mono)}
+.site-shot img{width:100%;height:auto}
+
+/* ---------- о компании: раскрытие цели ---------- */
+.statement-sub{margin-top:26px;max-width:860px;font-size:clamp(17px,1.5vw,20px);line-height:1.65;color:var(--muted)}
+.worlds{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:0;margin-top:64px;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.worlds__item{padding:34px 36px;background:var(--surface)}
+.worlds__n{display:block;font:500 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--glow);margin-bottom:16px}
+.worlds__item p{color:#c3cbdb;font-size:16px;max-width:420px}
+.worlds__link{position:relative;width:96px;display:grid;place-items:center;background:var(--bg)}
+.worlds__link i{display:block;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 12px rgba(90,169,255,.6)}
+.worlds__link::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:var(--glow);box-shadow:0 0 14px 3px rgba(255,207,138,.6);animation:travel 3.6s var(--ease) infinite}
+@keyframes travel{0%{transform:translateX(-40px);opacity:0}20%{opacity:1}80%{opacity:1}100%{transform:translateX(40px);opacity:0}}
+.worlds__note{margin-top:28px;max-width:860px;color:var(--muted)}
+.journey{display:flex;flex-wrap:wrap;gap:10px 0;margin:48px 0 0;counter-reset:j}
+.journey li{position:relative;padding:11px 18px;font:500 13px/1 var(--mono);letter-spacing:.02em;color:var(--text);border:1px solid var(--line-2);background:var(--surface);margin-right:30px;border-radius:99px}
+.journey li:not(:last-child)::after{content:"";position:absolute;right:-30px;top:50%;width:30px;height:1px;background:linear-gradient(90deg,var(--line-2),var(--accent))}
+.journey li:last-child{border-color:rgba(255,207,138,.5);box-shadow:0 0 20px -6px rgba(255,207,138,.45)}
+.roadmap__title{margin:88px 0 0;font:500 12px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+
+/* сценарий AI-агента: шесть шагов */
+.scenario{grid-template-columns:repeat(3,1fr)}
+.scenario time{color:var(--dim)}
+.scenario li:hover time{color:var(--glow)}
+
+@media(max-width:1020px){.scenario{grid-template-columns:repeat(2,1fr);row-gap:1px}.case--rev .case__media{order:-1}.case--rev{margin-top:80px}}
+@media(max-width:860px){
+  .worlds{grid-template-columns:1fr}.worlds__link{width:100%;height:56px}.worlds__link i{width:1px;height:100%;background:linear-gradient(180deg,transparent,var(--accent),transparent)}
+  .worlds__link::after{animation:none}
+  .scenario{grid-template-columns:1fr}
+  .journey{flex-direction:column;align-items:flex-start;gap:0}
+  .journey li{margin:0 0 30px}.journey li:not(:last-child)::after{right:auto;left:24px;top:100%;width:1px;height:30px;background:linear-gradient(180deg,var(--line-2),var(--accent))}
 }
