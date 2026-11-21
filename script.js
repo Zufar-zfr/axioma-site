@@ -26,10 +26,11 @@ const sky = (function () {
 
   function resize() {
     d = DPR(); w = c.width = innerWidth * d; h = c.height = innerHeight * d;
-    const n = Math.round(innerWidth * innerHeight / 6500);
+    const n = Math.round(innerWidth * innerHeight / 5200);
     stars = Array.from({ length: n }, () => {
       const z = Math.random();                                  // глубина: дальние мельче и медленнее
-      return { x: Math.random() * w, y: Math.random() * h, z, r: (.3 + z * 1.0) * d, p: Math.random() * 6.28, s: .2 + Math.random() * .8 };
+      return { x: Math.random() * w, y: Math.random() * h, z, r: (.45 + z * 1.15) * d, p: Math.random() * 6.28, s: .2 + Math.random() * .8,
+        flash: Math.random() < .14 ? 4000 + Math.random() * 9000 : 0, off: Math.random() * 20000 };   // часть звёзд время от времени вспыхивает
     });
   }
   function comet(force) {
@@ -56,8 +57,14 @@ const sky = (function () {
     ctx.fillStyle = "#cfe0ff";
     for (const s of stars) {
       let y = (s.y - sy * (.04 + s.z * .12)) % h; if (y < 0) y += h;
-      ctx.globalAlpha = (.18 + s.z * .5) * (.65 + .35 * Math.sin(s.p + t * .0009 * s.s));
-      ctx.beginPath(); ctx.arc(s.x, y, s.r, 0, 6.283); ctx.fill();
+      let a = (.4 + s.z * .55) * (.78 + .22 * Math.sin(s.p + t * .0009 * s.s)), r = s.r;
+      if (s.flash && !REDUCE) {                                  // короткая вспышка раз в несколько секунд
+        const ph = ((t + s.off) % s.flash) / s.flash;
+        if (ph < .12) { const k = Math.sin(ph / .12 * Math.PI); a = Math.min(1, a + k * .7); r *= 1 + k * 1.1;
+          if (k > .5) { ctx.globalAlpha = k * .35; ctx.fillRect(s.x - r * 4, y - .4 * d, r * 8, .8 * d); ctx.fillRect(s.x - .4 * d, y - r * 4, .8 * d, r * 8); } }
+      }
+      ctx.globalAlpha = a;
+      ctx.beginPath(); ctx.arc(s.x, y, r, 0, 6.283); ctx.fill();
     }
     for (let i = comets.length - 1; i >= 0; i--) {
       const k = comets[i]; k.life += dt; k.x += k.vx * dt; k.y += k.vy * dt;
@@ -153,7 +160,7 @@ document.querySelectorAll(".svc").forEach(c => c.addEventListener("pointermove",
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#d8e6ff";
     for (const p of pts) {
-      ctx.globalAlpha = .3 + .45 * (.5 + .5 * Math.sin(p.p + t * .0011 * p.s));
+      ctx.globalAlpha = .45 + .5 * (.5 + .5 * Math.sin(p.p + t * .0011 * p.s));
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
     }
     if (!REDUCE) requestAnimationFrame(draw);
