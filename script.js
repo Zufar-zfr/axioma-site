@@ -149,7 +149,7 @@ function theme() {
   frame();
 })();
 
-/* ===== Реалистичная Земля на чистом WebGL: день/ночь, терминатор, океан, облака, атмосфера ===== */
+/* ===== Земля на чистом WebGL: ночная карта, рельеф, облачный слой, атмосфера ===== */
 (function globe() {
   const hero = document.querySelector(".hero"), canvas = document.getElementById("globe");
   if (!hero || !canvas) return;
@@ -162,97 +162,99 @@ function theme() {
     #else
     precision mediump float;
     #endif
-    const vec3 SUN = vec3(-0.93, 0.24, -0.28);   // направление на Солнце (в системе камеры)
+    const vec3 MOON = vec3(-0.55, 0.58, 0.60);   // направление мягкого света (в системе камеры)
   `;
   const VS = `attribute vec3 p; attribute vec2 t; uniform mat3 R; uniform mat4 P; uniform float S; uniform vec3 O;
     varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;
     void main(){ vUv=t; vObj=p; vN=R*p; vec3 v=R*(p*S)+O; vP=v; gl_Position=P*vec4(v,1.); }`;
 
-  const EARTH_FS = PREC + `
-    uniform sampler2D map; uniform sampler2D rel; uniform sampler2D day; uniform mat3 R; uniform float time;
-    varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;
+  // общий кусок: шум и облака
+  const CLOUD = `
     float hash(vec3 p){ p=fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
     float noise(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
       return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
                  mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z); }
     float fbm(vec3 p){ float a=.5,s=0.; for(int i=0;i<5;i++){ s+=a*noise(p); p=p*2.07+vec3(1.7,9.2,3.1); a*=.5; } return s; }
-    vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0); }
+    float clouds(vec3 o, float time){
+      float ca=time*0.010, cs=sin(ca), cc=cos(ca);
+      vec3 q=vec3(cc*o.x+cs*o.z,o.y*1.5,-cs*o.x+cc*o.z);
+      vec3 w=vec3(fbm(q*1.6),fbm(q*1.6+5.2),fbm(q*1.6+9.1))-0.5;
+      float v=fbm(q*2.4+w*1.4)*0.82+fbm(q*6.5)*0.22;
+      return smoothstep(0.40,0.66,v);
+    }
+    float dither(){ return (fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-0.5)/255.0; }
+  `;
 
+  const EARTH_FS = PREC + `
+    uniform sampler2D map; uniform sampler2D rel; uniform mat3 R; uniform float time;
+    varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;` + CLOUD + `
     void main(){
       vec3 n=normalize(vN), V=normalize(-vP);
-      vec3 albedo=pow(texture2D(day,vUv).rgb,vec3(2.2));
-      vec3 nightc=texture2D(map,vUv).rgb;
-      vec3 glowc=texture2D(map,vUv,3.5).rgb;
+      vec3 c=texture2D(map,vUv).rgb;
+      vec3 glow=texture2D(map,vUv,3.5).rgb;
       vec4 r=texture2D(rel,vUv); float h=r.r; float water=r.g; float land=1.0-water;
 
-      // рельеф для освещения суши
+      // рельеф: наклон нормали по карте высот, свет сбоку даёт объём
       float d=1.0/2048.0;
       float hx=texture2D(rel,vUv+vec2(d,0.)).r-texture2D(rel,vUv-vec2(d,0.)).r;
       float hy=texture2D(rel,vUv+vec2(0.,d)).r-texture2D(rel,vUv-vec2(0.,d)).r;
       vec3 eo=normalize(cross(vec3(0.,1.,0.),vObj)); vec3 no=cross(vObj,eo);
-      vec3 nb=normalize(R*normalize(vObj-1.8*(hx*eo+hy*no)));
+      vec3 nb=normalize(R*normalize(vObj-6.0*(hx*eo+hy*no)));
+      float shade=dot(nb,MOON)-dot(n,MOON);
 
-      float ndl=dot(n,SUN);
-      float ndlb=mix(ndl,dot(nb,SUN),land);
-      float dayAmt=smoothstep(-0.12,0.16,ndl);          // мягкий терминатор
-      float lam=max(ndlb,0.0);
-      float ndv=max(dot(n,V),0.0);
+      vec3 col=mix(vec3(0.020,0.030,0.062),vec3(0.003,0.009,0.030),water);
+      col+=c*0.95;
+      col+=land*(h*vec3(0.05,0.07,0.12)+shade*vec3(0.42,0.54,0.88));
 
-      // облака (процедурные, дрейфуют)
-      float ca=time*0.006, cs=sin(ca), cc=cos(ca);
-      vec3 q=vec3(cc*vObj.x+cs*vObj.z,vObj.y*1.35,-cs*vObj.x+cc*vObj.z);
-      vec3 w=vec3(fbm(q*2.0),fbm(q*2.0+5.2),fbm(q*2.0+9.1))-0.5;
-      float cl=smoothstep(0.40,0.66,fbm(q*2.6+w*1.2)*0.85+fbm(q*7.0)*0.25);
+      // огни городов
+      float lum=max(c.r,max(c.g,c.b));
+      float lights=smoothstep(0.22,0.85,lum);
+      float cl=clouds(vObj,time);
+      col+=(lights*vec3(1.0,0.74,0.42)*0.62+glow*vec3(1.0,0.72,0.45)*0.95)*(1.0-cl*0.6);
 
-      // ---------- день ----------
-      vec3 sunCol=vec3(1.0,0.97,0.93)*1.9;
-      vec3 dayCol=albedo*(sunCol*lam+vec3(0.025,0.045,0.095));
-      vec3 H=normalize(SUN+V);
-      dayCol+=water*pow(max(dot(n,H),0.0),160.0)*vec3(1.0,0.92,0.8)*2.2*lam;          // солнечный блик
-      dayCol+=water*pow(1.0-ndv,4.0)*vec3(0.10,0.22,0.5)*max(ndl,0.0);                 // отражение неба
-      vec3 cloudDay=vec3(0.92,0.95,1.0)*(sunCol*0.42*max(ndl,0.0)+0.035);
-      dayCol=mix(dayCol,cloudDay,cl*0.95);
-      float tw=exp(-pow(ndl/0.09,2.0));                                               // закат/рассвет у терминатора
-      dayCol*=mix(vec3(1.0),vec3(1.2,0.72,0.45),tw);
+      // тень от облаков на земле
+      float sh=clouds(normalize(vObj+vec3(0.012,-0.010,0.0)),time);
+      col*=1.0-0.35*sh;
 
-      // ---------- ночь ----------
-      float lum=max(nightc.r,max(nightc.g,nightc.b));
-      float lights=smoothstep(0.20,0.85,lum);
-      vec3 warm=vec3(1.0,0.50,0.16);
-      vec3 nightCol=vec3(0.0035,0.0065,0.016)+pow(nightc,vec3(2.2))*0.35
-                   +(lights*0.55+pow(glowc,vec3(2.0)).r*0.9+glowc.r*0.25)*warm*(1.0-cl*0.65);
-      nightCol=mix(nightCol,nightCol*0.6+vec3(0.012,0.016,0.026)*cl,cl*0.7);          // облака в лунном свете
+      // океан: холодный блик и отражение неба на скользящем угле
+      vec3 H=normalize(MOON+V); float ndv=max(dot(n,V),0.0);
+      col+=water*(pow(max(dot(n,H),0.0),90.0)*vec3(0.30,0.48,0.90)*0.8+pow(1.0-ndv,3.0)*vec3(0.03,0.08,0.20));
 
-      vec3 col=mix(nightCol,dayCol,dayAmt);
-
-      // атмосфера у кромки на самой поверхности
+      // атмосфера на самой кромке
       float f=1.0-ndv;
-      float sunSide=smoothstep(-0.3,0.55,ndl);
-      vec3 scat=mix(vec3(0.015,0.035,0.08),vec3(0.20,0.45,1.0),sunSide)+vec3(0.9,0.38,0.12)*tw*0.55;
-      col+=scat*pow(f,3.6)*0.9;
+      float side=0.65+0.55*smoothstep(-0.2,0.9,dot(normalize(n.xy+vec2(0.0001)),normalize(vec2(-0.5,0.8))));
+      col+=(vec3(0.10,0.30,0.80)*pow(f,4.0)*0.32+vec3(0.45,0.70,0.95)*pow(f,9.0)*0.45)*side;
 
-      col=aces(col*1.05);
-      col=pow(col,vec3(1.0/2.2));
-      col+=(fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-0.5)/255.0;   // против полос
-      gl_FragColor=vec4(col,1.0);
+      col=1.0-exp(-col*1.2);
+      gl_FragColor=vec4(col+dither(),1.0);
+    }`;
+
+  // облачный слой — отдельная оболочка над поверхностью (параллакс и объём)
+  const CLOUD_FS = PREC + `
+    uniform float time; uniform mat3 R;
+    varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;` + CLOUD + `
+    void main(){
+      vec3 n=normalize(vN), V=normalize(-vP);
+      float cl=clouds(vObj,time);
+      float lit=0.30+0.70*max(dot(n,MOON),0.0);
+      float ndv=max(dot(n,V),0.0);
+      vec3 base=vec3(0.60,0.68,0.84)*lit;
+      base+=vec3(0.12,0.28,0.65)*pow(1.0-ndv,3.0)*0.9;
+      float a=cl*(0.78+0.22*pow(1.0-ndv,2.0));
+      gl_FragColor=vec4(base*a+dither(),a);
     }`;
 
   const ATMO_FS = PREC + `
-    uniform vec3 O; uniform float PS; varying vec3 vP;
+    uniform vec3 O; uniform float PS; varying vec3 vP;` + CLOUD + `
     void main(){
       vec3 dir=normalize(vP); float t=dot(O,dir); vec3 q=dir*t-O;
       float h=max(length(q)/PS-1.0,0.0);
       vec3 qn=normalize(q);
-      float sf=dot(qn,SUN);
-      float day=smoothstep(-0.35,0.6,sf);
-      float tw=exp(-pow((sf-0.02)/0.26,2.0));
+      float side=0.55+0.75*smoothstep(-0.3,0.9,dot(qn.xy,normalize(vec2(-0.5,0.8))));
       float rim=exp(-h*85.0), mid=exp(-h*22.0), far=exp(-h*7.0);
-      vec3 rimCol=mix(vec3(0.05,0.11,0.24),vec3(0.38,0.66,1.0),day)+vec3(1.0,0.42,0.12)*tw*0.7;
-      vec3 midCol=mix(vec3(0.02,0.05,0.14),vec3(0.14,0.36,0.90),day)+vec3(0.8,0.3,0.1)*tw*0.3;
-      float k=0.18+0.82*day;
-      vec3 col=(rimCol*rim*0.55+midCol*mid*0.30+vec3(0.03,0.10,0.45)*far*0.07*day)*k;
-      col+=(fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-0.5)/255.0;
-      gl_FragColor=vec4(max(col,0.0),clamp((col.r+col.g+col.b)*0.2,0.0,1.0));
+      vec3 col=(vec3(0.50,0.76,1.0)*rim*0.40+vec3(0.18,0.42,0.92)*mid*0.20+vec3(0.04,0.14,0.60)*far*0.06)*side;
+      col+=dither();
+      gl_FragColor=vec4(max(col,0.0),clamp((col.r+col.g+col.b)*0.16,0.0,1.0));
     }`;
 
   function prog(fs) {
@@ -261,10 +263,10 @@ function theme() {
     const pr = gl.createProgram(); gl.attachShader(pr, mk(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, mk(gl.FRAGMENT_SHADER, fs));
     gl.bindAttribLocation(pr, 0, "p"); gl.bindAttribLocation(pr, 1, "t"); gl.linkProgram(pr);
     if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
-    const u = {}; ["R", "P", "S", "O", "PS", "map", "rel", "day", "time"].forEach(n => u[n] = gl.getUniformLocation(pr, n)); return { pr, u };
+    const u = {}; ["R", "P", "S", "O", "PS", "map", "rel", "time"].forEach(n => u[n] = gl.getUniformLocation(pr, n)); return { pr, u };
   }
-  let earth, atmo;
-  try { earth = prog(EARTH_FS); atmo = prog(ATMO_FS); } catch (e) { return fail(e); }
+  let earth, atmo, cloud;
+  try { earth = prog(EARTH_FS); cloud = prog(CLOUD_FS); atmo = prog(ATMO_FS); } catch (e) { return fail(e); }
 
   // сфера: u — долгота, v — широта
   const N = 128, pos = [], uv = [], idx = [];
@@ -277,10 +279,10 @@ function theme() {
   const bPos = buf(pos, gl.ARRAY_BUFFER, Float32Array), bUv = buf(uv, gl.ARRAY_BUFFER, Float32Array), bIdx = buf(idx, gl.ELEMENT_ARRAY_BUFFER, Uint16Array);
 
   // текстуры: ночная карта, дневная карта, рельеф+вода. Сначала лёгкие версии, потом тяжёлые
-  const texMap = gl.createTexture(), texDay = gl.createTexture(), texRel = gl.createTexture();
-  let mapReady = false, dayReady = !window.EARTH_DAY_LO;
+  const texMap = gl.createTexture(), texRel = gl.createTexture();
+  let mapReady = false;
   const flat = (tex, rgb) => { gl.bindTexture(gl.TEXTURE_2D, tex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array(rgb)); };
-  flat(texRel, [0, 128, 0]); flat(texDay, [10, 24, 52]);
+  flat(texRel, [0, 128, 0]);
   function setTex(tex, src, onDone) {
     const img = new Image();
     img.onload = () => {
@@ -301,10 +303,8 @@ function theme() {
   }
   const load = (file, then) => { const s = document.createElement("script"); s.src = "assets/" + file; s.onload = then; document.head.appendChild(s); };
   setTex(texMap, window.EARTH_LO, () => { mapReady = true; });
-  if (window.EARTH_DAY_LO) setTex(texDay, window.EARTH_DAY_LO, () => { dayReady = true; });
   const start = () => {
     load("earth-relief.js", () => window.EARTH_REL && setTex(texRel, window.EARTH_REL));
-    load("earth-day.js", () => window.EARTH_DAY && setTex(texDay, window.EARTH_DAY));
     load("earth-hi.js", () => window.EARTH_HI && setTex(texMap, window.EARTH_HI));
   };
   document.readyState === "loading" ? addEventListener("DOMContentLoaded", start) : start();
@@ -335,35 +335,36 @@ function theme() {
     const Rx = [1, 0, 0, 0, cx, sx, 0, -sx, cx], Rz = [cz, sz, 0, -sz, cz, 0, 0, 0, 1], Ry = [cy, 0, -sy, 0, 1, 0, sy, 0, cy];
     return new Float32Array(mul(Rx, mul(Rz, Ry)));
   }
-  function draw(pg, R, scale, time, isEarth) {
+  function draw(pg, R, scale, time, mode) {
     gl.useProgram(pg.pr);
     gl.uniformMatrix3fv(pg.u.R, false, R); gl.uniformMatrix4fv(pg.u.P, false, P);
     gl.uniform1f(pg.u.S, scale); gl.uniform3f(pg.u.O, 0, Oy, -CAMZ);
-    if (isEarth) {
-      gl.uniform1f(pg.u.time, time);
+    gl.uniform1f(pg.u.time, time);
+    if (mode === "earth") {
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texMap); gl.uniform1i(pg.u.map, 0);
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texRel); gl.uniform1i(pg.u.rel, 1);
-      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, texDay); gl.uniform1i(pg.u.day, 2);
-    } else gl.uniform1f(pg.u.PS, S);
+    } else if (mode === "atmo") gl.uniform1f(pg.u.PS, S);
     gl.bindBuffer(gl.ARRAY_BUFFER, bPos); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, bUv); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bIdx); gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
   }
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let spin = -3.2, time = 0, last = performance.now(), visible = true;
+  let spin = -1.95, time = 0, last = performance.now(), visible = true;
   new IntersectionObserver(e => { visible = e[0].isIntersecting; }).observe(hero);
   (function loop(t) {
     requestAnimationFrame(loop);
-    if (!visible || !mapReady || !dayReady) { last = t; return; }
+    if (!visible || !mapReady) { last = t; return; }
     const dt = Math.min((t - last) / 1000, 0.1); last = t;
-    if (!reduce) { spin += dt * 0.012; time += dt; }         // очень медленное вращение с запада на восток
+    if (!reduce) { spin += dt * 0.009; time += dt; }         // очень медленное вращение с запада на восток
     const R = rot(-0.25, -0.41, spin);                       // наклон оси 23,4°
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE);
     gl.disable(gl.BLEND); gl.cullFace(gl.BACK); gl.depthMask(true);
-    draw(earth, R, S, time, true);
-    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.cullFace(gl.FRONT); gl.depthMask(false);
-    draw(atmo, R, S * 1.45, time, false);
+    draw(earth, R, S, time, "earth");
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    draw(cloud, R, S * 1.012, time, "cloud");        // облака над поверхностью
+    gl.cullFace(gl.FRONT);
+    draw(atmo, R, S * 1.45, time, "atmo");
   })(last);
 })();
