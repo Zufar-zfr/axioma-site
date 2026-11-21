@@ -163,31 +163,54 @@ function theme() {
     precision mediump float;
     #endif
     const vec3 MOON = vec3(-0.55, 0.58, 0.60);   // направление мягкого света (в системе камеры)
+    uniform vec3 O; uniform float PS; uniform mat3 R; uniform float time;
   `;
   const VS = `attribute vec3 p; attribute vec2 t; uniform mat3 R; uniform mat4 P; uniform float S; uniform vec3 O;
     varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;
     void main(){ vUv=t; vObj=p; vN=R*p; vec3 v=R*(p*S)+O; vP=v; gl_Position=P*vec4(v,1.); }`;
 
-  // общий кусок: шум и облака
-  const CLOUD = `
+  // шум, облака (трёхмерная плотность) и атмосфера (объёмное рассеяние вдоль луча)
+  const COMMON = `
     float hash(vec3 p){ p=fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
     float noise(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
       return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
                  mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z); }
-    float fbm(vec3 p){ float a=.5,s=0.; for(int i=0;i<5;i++){ s+=a*noise(p); p=p*2.07+vec3(1.7,9.2,3.1); a*=.5; } return s; }
-    float clouds(vec3 o, float time){
-      float ca=time*0.010, cs=sin(ca), cc=cos(ca);
-      vec3 q=vec3(cc*o.x+cs*o.z,o.y*1.5,-cs*o.x+cc*o.z);
-      vec3 w=vec3(fbm(q*1.6),fbm(q*1.6+5.2),fbm(q*1.6+9.1))-0.5;
-      float v=fbm(q*2.4+w*1.4)*0.82+fbm(q*6.5)*0.22;
-      return smoothstep(0.40,0.66,v);
-    }
+    float fbm5(vec3 p){ float a=.5,s=0.; for(int i=0;i<5;i++){ s+=a*noise(p); p=p*2.07+vec3(1.7,9.2,3.1); a*=.5; } return s; }
+    float fbm4(vec3 p){ float a=.5,s=0.; for(int i=0;i<4;i++){ s+=a*noise(p); p=p*2.07+vec3(1.7,9.2,3.1); a*=.5; } return s; }
     float dither(){ return (fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-0.5)/255.0; }
+
+    // облака чуть смещаются относительно земли (медленнее и в ту же сторону, что вращение)
+    vec3 cdir(vec3 o){ float ca=-time*0.0012, cs=sin(ca), cc=cos(ca); return vec3(cc*o.x+cs*o.z,o.y,-cs*o.x+cc*o.z); }
+    vec3 cwarp(vec3 o){ vec3 q=cdir(o)*vec3(1.6,2.4,1.6); return vec3(fbm5(q),fbm5(q+5.2),fbm5(q+9.1))-0.5; }
+    float cdens(vec3 o,float alt,vec3 w){
+      vec3 q=cdir(o)*vec3(2.4,3.4,2.4)+w*1.4+vec3(0.0,0.0,alt*2.5);
+      return smoothstep(0.40,0.62,fbm4(q)*0.95);
+    }
+
+    // объёмная атмосфера: накопление света вдоль луча через оболочку (всё в радиусах планеты)
+    vec3 atmosphere(vec3 dir){
+      vec3 oc=-O/PS; float Ra=1.14;
+      float b=dot(oc,dir), cc=dot(oc,oc)-Ra*Ra, disc=b*b-cc;
+      if(disc<0.0) return vec3(0.0);
+      float sq=sqrt(disc), t0=max(-b-sq,0.0), t1=-b+sq;
+      float dp=b*b-(dot(oc,oc)-1.0);
+      if(dp>0.0){ float tp=-b-sqrt(dp); if(tp>0.0) t1=min(t1,tp); }
+      float dt=(t1-t0)/12.0; vec3 acc=vec3(0.0);
+      for(int i=0;i<12;i++){
+        vec3 p=oc+dir*(t0+(float(i)+0.5)*dt);
+        float alt=length(p)-1.0;
+        float dens=exp(-alt*38.0);
+        float lit=0.28+0.72*smoothstep(-0.3,0.9,dot(normalize(p),normalize(vec3(-0.5,0.6,0.62))));
+        vec3 col=mix(vec3(0.62,0.82,1.0),vec3(0.10,0.28,0.95),smoothstep(0.0,0.07,alt));
+        acc+=dens*dt*col*lit;
+      }
+      return acc*0.85;
+    }
   `;
 
   const EARTH_FS = PREC + `
-    uniform sampler2D map; uniform sampler2D rel; uniform mat3 R; uniform float time;
-    varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;` + CLOUD + `
+    uniform sampler2D map; uniform sampler2D rel;
+    varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;` + COMMON + `
     void main(){
       vec3 n=normalize(vN), V=normalize(-vP);
       vec3 c=texture2D(map,vUv).rgb;
@@ -199,62 +222,69 @@ function theme() {
       float hx=texture2D(rel,vUv+vec2(d,0.)).r-texture2D(rel,vUv-vec2(d,0.)).r;
       float hy=texture2D(rel,vUv+vec2(0.,d)).r-texture2D(rel,vUv-vec2(0.,d)).r;
       vec3 eo=normalize(cross(vec3(0.,1.,0.),vObj)); vec3 no=cross(vObj,eo);
-      vec3 nb=normalize(R*normalize(vObj-6.0*(hx*eo+hy*no)));
+      vec3 nb=normalize(R*normalize(vObj-4.5*(hx*eo+hy*no)));
       float shade=dot(nb,MOON)-dot(n,MOON);
 
       vec3 col=mix(vec3(0.020,0.030,0.062),vec3(0.003,0.009,0.030),water);
       col+=c*0.95;
       col+=land*(h*vec3(0.05,0.07,0.12)+shade*vec3(0.42,0.54,0.88));
 
-      // огни городов
+      // облака над этим местом: приглушают огни, отбрасывают тень
+      vec3 w=cwarp(vObj);
+      float cl=cdens(vObj,0.35,w);
       float lum=max(c.r,max(c.g,c.b));
       float lights=smoothstep(0.22,0.85,lum);
-      float cl=clouds(vObj,time);
       col+=(lights*vec3(1.0,0.74,0.42)*0.62+glow*vec3(1.0,0.72,0.45)*0.95)*(1.0-cl*0.6);
-
-      // тень от облаков на земле
-      float sh=clouds(normalize(vObj+vec3(0.012,-0.010,0.0)),time);
+      float sh=cdens(normalize(vObj+vec3(0.014,-0.012,0.0)),0.0,w);
       col*=1.0-0.35*sh;
 
       // океан: холодный блик и отражение неба на скользящем угле
       vec3 H=normalize(MOON+V); float ndv=max(dot(n,V),0.0);
       col+=water*(pow(max(dot(n,H),0.0),90.0)*vec3(0.30,0.48,0.90)*0.8+pow(1.0-ndv,3.0)*vec3(0.03,0.08,0.20));
 
-      // атмосфера на самой кромке
-      float f=1.0-ndv;
-      float side=0.65+0.55*smoothstep(-0.2,0.9,dot(normalize(n.xy+vec2(0.0001)),normalize(vec2(-0.5,0.8))));
-      col+=(vec3(0.10,0.30,0.80)*pow(f,4.0)*0.32+vec3(0.45,0.70,0.95)*pow(f,9.0)*0.45)*side;
+      // атмосфера между камерой и поверхностью: плавно переходит в свечение за краем
+      col+=atmosphere(normalize(vP));
 
       col=1.0-exp(-col*1.2);
       gl_FragColor=vec4(col+dither(),1.0);
     }`;
 
-  // облачный слой — отдельная оболочка над поверхностью (параллакс и объём)
+  // облачный слой: настоящий объём — луч проходит через толщу облаков, поэтому у края они не плоские
   const CLOUD_FS = PREC + `
-    uniform float time; uniform mat3 R;
-    varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;` + CLOUD + `
+    varying vec2 vUv; varying vec3 vObj; varying vec3 vN; varying vec3 vP;` + COMMON + `
     void main(){
-      vec3 n=normalize(vN), V=normalize(-vP);
-      float cl=clouds(vObj,time);
-      float lit=0.30+0.70*max(dot(n,MOON),0.0);
-      float ndv=max(dot(n,V),0.0);
-      vec3 base=vec3(0.60,0.68,0.84)*lit;
-      base+=vec3(0.12,0.28,0.65)*pow(1.0-ndv,3.0)*0.9;
-      float a=cl*(0.78+0.22*pow(1.0-ndv,2.0));
-      gl_FragColor=vec4(base*a+dither(),a);
+      vec3 dir=normalize(vP);
+      vec3 oc=-O/PS; float Ro=1.035;
+      float b=dot(oc,dir), disc=b*b-(dot(oc,oc)-Ro*Ro);
+      if(disc<0.0){ gl_FragColor=vec4(0.0); return; }
+      float sq=sqrt(disc), t0=max(-b-sq,0.0), t1=-b+sq;
+      float dp=b*b-(dot(oc,oc)-1.0);
+      if(dp>0.0){ float tp=-b-sqrt(dp); if(tp>0.0) t1=min(t1,tp); }
+      t1=min(t1,t0+0.10);
+      float dt=(t1-t0)/7.0;
+      vec3 w=cwarp(normalize(vObj));
+      vec3 acc=vec3(0.0); float T=1.0;
+      for(int i=0;i<7;i++){
+        vec3 p=oc+dir*(t0+(float(i)+0.5)*dt);
+        float alt=clamp((length(p)-1.0)/0.035,0.0,1.0);
+        float prof=smoothstep(0.0,0.25,alt)*(1.0-smoothstep(0.65,1.0,alt));
+        vec3 od=normalize(p*R);                                       // направление в системе планеты
+        float dens=cdens(od,alt,w)*prof;
+        vec3 np=normalize(p);
+        float lit=0.30+0.70*max(dot(np,MOON),0.0)+0.25*alt;
+        vec3 cc=vec3(0.55,0.63,0.80)*lit+vec3(0.10,0.22,0.5)*pow(1.0-max(dot(np,-dir),0.0),3.0)*0.6;
+        float a=1.0-exp(-dens*dt*70.0);
+        acc+=T*a*cc; T*=1.0-a;
+      }
+      gl_FragColor=vec4(acc*0.95+dither()*(1.0-T),1.0-T);
     }`;
 
   const ATMO_FS = PREC + `
-    uniform vec3 O; uniform float PS; varying vec3 vP;` + CLOUD + `
+    varying vec3 vP;` + COMMON + `
     void main(){
-      vec3 dir=normalize(vP); float t=dot(O,dir); vec3 q=dir*t-O;
-      float h=max(length(q)/PS-1.0,0.0);
-      vec3 qn=normalize(q);
-      float side=0.55+0.75*smoothstep(-0.3,0.9,dot(qn.xy,normalize(vec2(-0.5,0.8))));
-      float rim=exp(-h*85.0), mid=exp(-h*22.0), far=exp(-h*7.0);
-      vec3 col=(vec3(0.50,0.76,1.0)*rim*0.40+vec3(0.18,0.42,0.92)*mid*0.20+vec3(0.04,0.14,0.60)*far*0.06)*side;
+      vec3 col=atmosphere(normalize(vP));
       col+=dither();
-      gl_FragColor=vec4(max(col,0.0),clamp((col.r+col.g+col.b)*0.16,0.0,1.0));
+      gl_FragColor=vec4(max(col,0.0),clamp((col.r+col.g+col.b)*0.30,0.0,1.0));
     }`;
 
   function prog(fs) {
@@ -339,18 +369,18 @@ function theme() {
     gl.useProgram(pg.pr);
     gl.uniformMatrix3fv(pg.u.R, false, R); gl.uniformMatrix4fv(pg.u.P, false, P);
     gl.uniform1f(pg.u.S, scale); gl.uniform3f(pg.u.O, 0, Oy, -CAMZ);
-    gl.uniform1f(pg.u.time, time);
+    gl.uniform1f(pg.u.time, time); gl.uniform1f(pg.u.PS, S);
     if (mode === "earth") {
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texMap); gl.uniform1i(pg.u.map, 0);
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texRel); gl.uniform1i(pg.u.rel, 1);
-    } else if (mode === "atmo") gl.uniform1f(pg.u.PS, S);
+    }
     gl.bindBuffer(gl.ARRAY_BUFFER, bPos); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, bUv); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bIdx); gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
   }
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let spin = -1.95, time = 0, last = performance.now(), visible = true;
+  let spin = -2.4, time = 0, last = performance.now(), visible = true;
   new IntersectionObserver(e => { visible = e[0].isIntersecting; }).observe(hero);
   (function loop(t) {
     requestAnimationFrame(loop);
@@ -363,7 +393,7 @@ function theme() {
     gl.disable(gl.BLEND); gl.cullFace(gl.BACK); gl.depthMask(true);
     draw(earth, R, S, time, "earth");
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
-    draw(cloud, R, S * 1.012, time, "cloud");        // облака над поверхностью
+    draw(cloud, R, S * 1.035, time, "cloud");        // облака над поверхностью
     gl.cullFace(gl.FRONT);
     draw(atmo, R, S * 1.45, time, "atmo");
   })(last);
