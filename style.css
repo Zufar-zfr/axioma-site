@@ -218,10 +218,10 @@ h2{font-size:clamp(30px,4.4vw,46px);margin-bottom:48px}
 
 /* EARTH: готовое видео NASA (Black Marble 2016, вращающийся шар), кадр 1760×1760 с диском 1702 */
 .hero{--d:max(125vw,1100px)}
-.earth{position:absolute;left:50%;top:calc(46% - .0171 * var(--d));width:calc(var(--d) * 1.0341);height:calc(var(--d) * 1.0341);transform:translateX(-50%);pointer-events:none;mix-blend-mode:screen}
+.earth{position:absolute;left:50%;top:calc(46% - .0171 * var(--d));width:calc(var(--d) * 1.0341);height:calc(var(--d) * 1.0341);transform:translateX(-50%);pointer-events:none}
 .earth__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   filter:brightness(1.25) contrast(1.06) saturate(1.12);
-  -webkit-mask-image:radial-gradient(circle closest-side,#000 95%,transparent 100%);mask-image:radial-gradient(circle closest-side,#000 95%,transparent 100%)}
+  -webkit-mask-image:radial-gradient(circle closest-side,#000 96.4%,transparent 97.2%);mask-image:radial-gradient(circle closest-side,#000 96.4%,transparent 97.2%)}
 .earth__glow{position:absolute;left:1.65%;top:1.65%;width:96.7%;height:96.7%;border-radius:50%;
   box-shadow:0 0 60px 12px hsl(var(--h) 100% 65% / .40),0 0 120px 20px hsl(var(--h) 100% 65% / .22),inset 0 0 90px 6px hsl(var(--h) 100% 65% / .22);
   animation:glow 6s ease-in-out infinite}
