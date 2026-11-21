@@ -14,23 +14,6 @@
 1. В `config.js` укажите `whatsappNumber` — номер в международном формате, только цифры (например `77011234567`).
 2. Видео Земли: NASA Scientific Visualization Studio, «Black Marble 2016 (Rotating Globe)», https://svs.gsfc.nasa.gov/30878/ — авторство указано в подвале. Правила использования материалов NASA: https://www.nasa.gov/multimedia/guidelines/index.html
 
-## Подключение API ассистента
+## Подключение AI-ассистента
 
-В `config.js` укажите `chatApiUrl`. Пока он пустой, ассистент отвечает заготовленными ответами.
-
-Запрос:
-
-```http
-POST {chatApiUrl}
-Content-Type: application/json
-
-{ "sessionId": "uuid", "message": "текст посетителя", "history": [{"role":"user|assistant","content":"..."}] }
-```
-
-Ответ `200`:
-
-```json
-{ "reply": "текст ассистента" }
-```
-
-Если API на другом домене — нужен CORS. Ключи моделей храните только на сервере.
+Ассистент на сайте работает через небольшой сервис в `api/` (Cloudflare Worker): ключ Gemini хранится там, в секретах, а не в этом репозитории. Пошаговая инструкция — `api/README.md`. После запуска впишите адрес сервиса в `config.js` → `chatApiUrl`. Пока он пустой, ассистент отвечает заготовленными ответами.
