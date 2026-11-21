@@ -148,3 +148,10 @@ function theme() {
   addEventListener("scroll", () => { if (reduce) frame(); }, { passive: true });
   frame();
 })();
+
+/* ===== Видео Земли: пауза вне экрана и при «уменьшить анимацию» ===== */
+(function earthVideo() {
+  const v = document.querySelector(".earth__video"); if (!v) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); return; }
+  new IntersectionObserver(e => { e[0].isIntersecting ? v.play().catch(() => {}) : v.pause(); }).observe(document.querySelector(".hero"));
+})();
