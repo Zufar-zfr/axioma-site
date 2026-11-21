@@ -149,9 +149,14 @@ function theme() {
   frame();
 })();
 
-/* ===== Видео Земли: пауза вне экрана и при «уменьшить анимацию» ===== */
+/* ===== Видео Земли: старт над Турцией/Украиной, пауза вне экрана и при «уменьшить анимацию» ===== */
 (function earthVideo() {
   const v = document.querySelector(".earth__video"); if (!v) return;
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); return; }
-  new IntersectionObserver(e => { e[0].isIntersecting ? v.play().catch(() => {}) : v.pause(); }).observe(document.querySelector(".hero"));
+  const START = 136;                       // секунда ролика, где в центре Чёрное море и огни Европы
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;   // остаётся постер
+  let inView = true;
+  const play = () => { if (inView) v.play().catch(() => {}); };
+  const begin = () => { v.currentTime = START; v.addEventListener("seeked", play, { once: true }); };
+  v.readyState >= 1 ? begin() : v.addEventListener("loadedmetadata", begin, { once: true });
+  new IntersectionObserver(e => { inView = e[0].isIntersecting; inView ? play() : v.pause(); }).observe(document.querySelector(".hero"));
 })();
