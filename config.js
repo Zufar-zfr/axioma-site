@@ -7,5 +7,5 @@ window.AXIOMA_CONFIG = {
 
   // Адрес API ИИ-ассистента на сайте. Пока пусто — ассистент отвечает заготовленными ответами.
   // Формат запроса и ответа описан в README.md
-  chatApiUrl: "",
+  chatApiUrl: "https://axioma-chat.axioma-kz.workers.dev",
 };

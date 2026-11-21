@@ -73,7 +73,7 @@
       <div class="chat__log" aria-live="polite"></div>
       <div class="chat__quick"></div>
       <form class="chat__form" autocomplete="off">
-        <input type="text" placeholder="Напишите, что вам нужно" aria-label="Сообщение">
+        <input type="text" maxlength="800" placeholder="Напишите, что вам нужно" aria-label="Сообщение">
         <button type="submit">Отправить</button>
       </form>
       ${CFG.chatApiUrl ? "" : '<p class="chat__note">Ответы ассистента ознакомительные. Точные условия обсудим в WhatsApp.</p>'}`;

@@ -5,7 +5,8 @@ compatibility_date = "2025-01-01"
 [vars]
 # Откуда разрешены запросы к чату. Через запятую. Когда подключите домен — добавьте его сюда.
 ALLOWED_ORIGINS = "https://zufar-zfr.github.io"
-# Модель Gemini: "gemini-2.5-flash" (качественнее) или "gemini-2.5-flash-lite" (дешевле и быстрее)
-GEMINI_MODEL = "gemini-2.5-flash"
+# Модель Gemini. Проверено: gemini-3.5-flash-lite — быстро (1–2 с) и аккуратно. Модели 2.5 для новых ключей закрыты.
+# gemini-3.5-flash «думает» долго и может обрезать ответ, для чата не подходит.
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 # Ключ GEMINI_API_KEY здесь НЕ пишем. Он задаётся командой:  npx wrangler secret put GEMINI_API_KEY

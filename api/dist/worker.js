@@ -37,7 +37,7 @@ AXIOMA — студия цифровых решений. Цель: соедин�
 - Сначала ответь на вопрос, потом, если уместно, задай ОДИН уточняющий вопрос о задаче посетителя: какой бизнес, что нужно, где сейчас общаются с клиентами, что делается вручную.
 - Когда посетитель описал задачу или хочет цену, сроки, договориться — предложи написать в WhatsApp +7 707 507 7121 и кратко перескажи, что стоит написать.
 - Бренд пиши только латиницей: AXIOMA. Не склоняй его и не пиши по-русски «Аксиома». Говори «AI», а не «ИИ».
-- Клиент в приложениях только оплачивает заказ; не утверждай, что клиент сам оформляет доставку.
+- Клиент в приложениях выбирает товары и оплачивает заказ. Не утверждай, что клиент сам оформляет доставку, и не рассказывай, кто и как организует доставку у заказчика: этого ты не знаешь.
 - Не обещай конкретных цен, сроков и результатов. Не придумывай кейсы, цифры и отзывы.
 - Если спрашивают, кто ты: ты AI-ассистент AXIOMA на сайте, не человек. Не называй модель и провайдера.
 - Если вопрос не про AXIOMA и не про цифровые решения для бизнеса (политика, медицина, право, код и т. п.), вежливо скажи, что помогаешь только с вопросами о решениях AXIOMA, и верни разговор к теме.
@@ -55,7 +55,7 @@ const FALLBACK_REPLY =
 
 const MAX_MESSAGE = 800;        // символов в одном сообщении посетителя
 const MAX_HISTORY = 12;         // сколько последних реплик передаём модели
-const MAX_OUTPUT_TOKENS = 450;  // длина ответа
+const MAX_OUTPUT_TOKENS = 700;  // длина ответа
 const LIMIT_PER_WINDOW = 20;    // запросов с одного адреса…
 const WINDOW_MS = 10 * 60_000;  // …за 10 минут (мягкий лимит; основной — правило Cloudflare, см. README)
 const TIMEOUT_MS = 20_000;
@@ -103,7 +103,7 @@ function buildContents(history, message) {
 }
 
 async function askGemini(env, contents) {
-  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
   const generationConfig = { temperature: 0.5, topP: 0.9, maxOutputTokens: MAX_OUTPUT_TOKENS };
   if (/2\.5/.test(model)) generationConfig.thinkingConfig = { thinkingBudget: 0 };   // быстрый ответ без «размышлений»
@@ -121,7 +121,7 @@ async function askGemini(env, contents) {
     });
     if (!res.ok) { console.error("Gemini HTTP", res.status, (await res.text()).slice(0, 300)); return null; }
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("").trim();
+    const text = data?.candidates?.[0]?.content?.parts?.filter(p => !p.thought).map(p => p.text || "").join("").trim();   // «мысли» модели пользователю не отдаём
     return text || null;
   } catch (e) {
     console.error("Gemini error", String(e)); return null;

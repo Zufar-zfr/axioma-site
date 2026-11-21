@@ -6,7 +6,7 @@ import { SYSTEM_PROMPT, FALLBACK_REPLY } from "./knowledge.js";
 
 const MAX_MESSAGE = 800;        // символов в одном сообщении посетителя
 const MAX_HISTORY = 12;         // сколько последних реплик передаём модели
-const MAX_OUTPUT_TOKENS = 450;  // длина ответа
+const MAX_OUTPUT_TOKENS = 700;  // длина ответа
 const LIMIT_PER_WINDOW = 20;    // запросов с одного адреса…
 const WINDOW_MS = 10 * 60_000;  // …за 10 минут (мягкий лимит; основной — правило Cloudflare, см. README)
 const TIMEOUT_MS = 20_000;
@@ -54,7 +54,7 @@ function buildContents(history, message) {
 }
 
 async function askGemini(env, contents) {
-  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
   const generationConfig = { temperature: 0.5, topP: 0.9, maxOutputTokens: MAX_OUTPUT_TOKENS };
   if (/2\.5/.test(model)) generationConfig.thinkingConfig = { thinkingBudget: 0 };   // быстрый ответ без «размышлений»
@@ -72,7 +72,7 @@ async function askGemini(env, contents) {
     });
     if (!res.ok) { console.error("Gemini HTTP", res.status, (await res.text()).slice(0, 300)); return null; }
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("").trim();
+    const text = data?.candidates?.[0]?.content?.parts?.filter(p => !p.thought).map(p => p.text || "").join("").trim();   // «мысли» модели пользователю не отдаём
     return text || null;
   } catch (e) {
     console.error("Gemini error", String(e)); return null;
