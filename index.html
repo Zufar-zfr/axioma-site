@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Аксиома — сайты, приложения и ИИ-агенты для бизнеса</title>
+<meta name="description" content="Аксиома разрабатывает сайты, приложения и ИИ-агентов под задачи вашей компании: оплата, доставка, CRM, WhatsApp и Instagram.">
+<meta name="theme-color" content="#04060d">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="nav__brand" href="#top" aria-label="Аксиома"><span class="dot"></span>AXIOMA</a>
+  <nav class="nav__links">
+    <a href="#projects">Проекты</a>
+    <a href="#services">Что мы делаем для вас</a>
+    <a href="agents.html">ИИ-агенты</a>
+    <a href="#flow">Как работаем</a>
+    <a href="#about">О нас</a>
+  </nav>
+  <a class="btn btn--small js-wa" href="#contact">Обсудить задачу</a>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <canvas id="globe" aria-hidden="true"></canvas>
+  <div class="hero__fallback" aria-hidden="true"></div>
+  <div class="hero__vignette"></div>
+
+  <div class="hero__content">
+    <img class="hero__logo" src="assets/logo.png" alt="AXIOMA">
+    <p class="hero__tag"><span>//</span> цифровые сервисы · ИИ · автоматизация</p>
+  </div>
+
+  <a class="hero__scroll" href="#intro" aria-label="Прокрутить вниз"><i></i><span>scroll</span></a>
+  <div class="hero__hud" aria-hidden="true">
+    <span>LAT 41.2995° N</span><span>LON 69.2401° E</span><span id="hudClock">--:--:-- UTC</span>
+  </div>
+</section>
+
+<main>
+
+<!-- ============ INTRO ============ -->
+<section class="section intro" id="intro">
+  <div class="wrap">
+    <p class="eyebrow reveal">01 / Что мы можем сделать для вашего бизнеса</p>
+    <h1 class="reveal">Сайты, приложения и&nbsp;<em>ИИ-агенты</em>, которые приводят клиентов и&nbsp;экономят ваше время</h1>
+    <p class="lead reveal">Разрабатываем цифровые сервисы под задачи вашей компании. Создаём сайты и приложения с оплатой и доставкой, подключаем ИИ-агентов к CRM и автоматизируем путь клиента от первого сообщения до заказа.</p>
+    <div class="actions reveal">
+      <a class="btn btn--primary" href="#projects">Посмотреть, как это работает</a>
+      <a class="btn btn--ghost js-wa" href="#contact">Обсудить мою задачу</a>
+    </div>
+    <ul class="chips reveal">
+      <li>Сайты</li><li>Приложения</li><li>ИИ-агенты</li><li>CRM</li><li>WhatsApp</li><li>Instagram</li><li>Оплата</li><li>Доставка</li>
+    </ul>
+
+    <ul class="benefits">
+      <li class="reveal"><b>Клиенты не ждут ответа</b>Агент отвечает на сообщения сразу, в том числе вечером и в выходные.</li>
+      <li class="reveal"><b>Меньше ручной работы</b>Обращения, заказы и оплата попадают в CRM без переписывания вручную.</li>
+      <li class="reveal"><b>Всё в одной связке</b>Сайт, приложение, мессенджеры и учёт работают как единая система.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ PORTFOLIO ============ -->
+<section class="section" id="projects">
+  <div class="wrap">
+    <p class="eyebrow reveal">02 / Портфолио</p>
+    <h2 class="reveal">Посмотрите, как это уже работает</h2>
+
+    <article class="case reveal">
+      <div class="case__shot">
+        <div class="phone">
+          <img class="phone__real" src="assets/mango.jpg" alt="Скриншот приложения Mango Fruits" onerror="this.remove()">
+          <div class="phone__empty">
+            <small>iOS-приложение</small>
+            <b>Mango Fruits</b>
+            <span>Здесь будут скриншоты приложения</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="case__info">
+        <span class="tag">Мобильное приложение · CRM</span>
+        <h3>Mango Fruits</h3>
+        <dl>
+          <dt>Что требовалось</dt>
+          <dd>Приложение для заказа продуктов — фруктов с доставкой в Алматы.</dd>
+          <dt>Что сделала «Аксиома»</dt>
+          <dd>Приложение для клиентов и панель администратора с CRM.</dd>
+          <dt>Как этим пользуются сейчас</dt>
+          <dd>Клиенты оформляют заказы в приложении из App Store, а администратор ведёт их и работает с клиентами в CRM.</dd>
+        </dl>
+        <a class="btn btn--ghost" href="https://apps.apple.com/us/app/mango-fruits/id6758238879" target="_blank" rel="noopener">Посмотреть в App Store <span aria-hidden="true">↗</span></a>
+      </div>
+    </article>
+
+    <div class="case case--next reveal">
+      <div>
+        <span class="tag">Следующий проект</span>
+        <h3>Здесь может быть ваш</h3>
+        <p>Расскажите о задаче — предложим решение и покажем, как оно будет работать в вашем бизнесе.</p>
+      </div>
+      <a class="btn btn--primary js-wa" href="#contact">Обсудить мою задачу</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SERVICES ============ -->
+<section class="section" id="services">
+  <div class="wrap">
+    <p class="eyebrow reveal">03 / Чем мы занимаемся</p>
+    <h2 class="reveal">Что мы можем сделать для вас</h2>
+
+    <div class="cards">
+      <article class="card reveal">
+        <span class="card__n">01</span>
+        <svg class="card__ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="9" width="38" height="30" rx="3"/><path d="M5 17h38"/><circle cx="10" cy="13" r=".8" fill="currentColor"/><circle cx="14" cy="13" r=".8" fill="currentColor"/><path d="M13 27l-3 3 3 3M35 27l3 3-3 3M21 34l6-8"/></svg>
+        <h3>Сайты и веб-сервисы</h3>
+        <p>Разработаем сайт по вашему техническому заданию, запустим и внедрим в работу компании. В портфолио показываем конкретные форматы, которые уже делали.</p>
+      </article>
+
+      <article class="card reveal">
+        <span class="card__n">02</span>
+        <svg class="card__ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="14" y="4" width="20" height="40" rx="4"/><path d="M21 38h6"/><path d="M19 16h10M19 22h10M19 28h6"/></svg>
+        <h3>Приложения и мультисервисные платформы</h3>
+        <p>Создадим приложение, где ваш клиент выберет услугу или товар, посмотрит точки на карте, оплатит заказ и оформит доставку. Состав функций зависит от задачи вашего бизнеса.</p>
+      </article>
+
+      <article class="card reveal">
+        <span class="card__n">03</span>
+        <svg class="card__ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="11" y="14" width="26" height="20" rx="5"/><path d="M24 14V8"/><circle cx="24" cy="6" r="2"/><circle cx="19" cy="24" r="2"/><circle cx="29" cy="24" r="2"/><path d="M20 30h8M6 22v4M42 22v4"/></svg>
+        <h3>ИИ-агенты для продаж и поддержки</h3>
+        <p>Настроим агента под ваши продукты, цены и правила, подключим к CRM, WhatsApp и Instagram. Он отвечает клиентам, уточняет запрос, фиксирует обращение и передаёт диалог менеджеру, когда нужно его участие. Голосовые агенты принимают звонки.</p>
+        <a class="card__more" href="agents.html">Как это выглядит + демо-чат →</a>
+      </article>
+
+      <article class="card reveal">
+        <span class="card__n">04</span>
+        <svg class="card__ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="24" r="5"/><circle cx="38" cy="12" r="5"/><circle cx="38" cy="36" r="5"/><path d="M15 24h8l10-10M23 24l10 10"/></svg>
+        <h3>Цифровизация бизнес-процессов</h3>
+        <p>Свяжем этапы вашей работы: обращение клиента, заказ, оплату, доставку и учёт в CRM. Например, QR-меню для кафе и ресторанов.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FLOW ============ -->
+<section class="section" id="flow">
+  <div class="wrap">
+    <p class="eyebrow reveal">04 / Путь вашего клиента</p>
+    <h2 class="reveal">От первого сообщения до заказа</h2>
+    <ol class="flow">
+      <li class="reveal"><b>Обращение</b><span>Клиент пишет в WhatsApp, Instagram, звонит или заходит на сайт</span></li>
+      <li class="reveal"><b>ИИ-агент</b><span>Отвечает, уточняет запрос, фиксирует обращение</span></li>
+      <li class="reveal"><b>CRM</b><span>Диалог и клиент попадают в учёт; менеджер подключается, когда нужно</span></li>
+      <li class="reveal"><b>Заказ и оплата</b><span>Через сайт или приложение</span></li>
+      <li class="reveal"><b>Доставка</b><span>Оформление и статус заказа</span></li>
+    </ol>
+    <div class="actions reveal" style="margin-top:44px">
+      <a class="btn btn--ghost" href="agents.html">Посмотреть сценарий с ИИ-агентом</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ABOUT ============ -->
+<section class="section" id="about">
+  <div class="wrap">
+    <div class="about">
+      <div>
+        <p class="eyebrow reveal">05 / О компании</p>
+        <h2 class="reveal">Меньше ручной работы — быстрее к клиенту</h2>
+      </div>
+      <div class="about__text reveal">
+        <p>Цель «Аксиомы» — помогать компаниям тратить меньше времени на ручную работу и быстрее обслуживать клиентов. Для этого мы объединяем сайты, приложения, каналы связи и внутренние системы бизнеса.</p>
+      </div>
+    </div>
+
+    <h3 class="roadmap__title reveal">Дорожная карта</h3>
+    <ol class="roadmap">
+      <li class="reveal">
+        <span class="roadmap__year">2025</span>
+        <b>Начало работы команды</b>
+        <p>Команда «Аксиомы» начала работу над первыми цифровыми проектами.</p>
+      </li>
+      <li class="reveal">
+        <span class="roadmap__year">2026</span>
+        <b>Работающие решения</b>
+        <p>Запущены проекты, например <a href="#projects">Mango Fruits</a>. Сегодня команда делает сайты, приложения и <a href="agents.html">ИИ-агентов</a>.</p>
+      </li>
+      <li class="reveal">
+        <span class="roadmap__year">2027</span>
+        <b>Планы развития</b>
+        <p>Планируем подать заявку на участие в Astana Hub.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section class="section contact" id="contact">
+  <div class="wrap">
+    <div class="contact__box reveal">
+      <p class="eyebrow">06 / Контакты</p>
+      <h2>Расскажите о своей задаче</h2>
+      <p class="lead">Напишите нам в WhatsApp или спросите ИИ-агента прямо здесь — подскажем, что можно автоматизировать и с чего начать.</p>
+      <a class="btn btn--primary btn--big js-wa" href="#contact">Написать в WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <span>© <span id="year"></span> Аксиома</span>
+  <span class="mono">AXIOMA // digital · AI · automation</span>
+</footer>
+
+<script src="config.js"></script>
+<script src="assets/three.min.js"></script>
+<script src="script.js"></script>
+<script src="chat.js"></script>
+</body>
+</html>
