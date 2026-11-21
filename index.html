@@ -3,28 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Аксиома — сайты, приложения и ИИ-агенты для бизнеса</title>
-<meta name="description" content="Аксиома разрабатывает сайты, приложения и ИИ-агентов под задачи вашей компании: оплата, доставка, CRM, WhatsApp и Instagram.">
-<meta name="theme-color" content="#04060d">
+<title>Аксиома — сайты, приложения и ИИ-решения для бизнеса</title>
+<meta name="description" content="Аксиома разрабатывает сайты, мобильные приложения, ИИ-агентов и автоматизацию процессов под задачи вашей компании — от технического задания до запуска.">
+<meta name="theme-color" content="#05070d">
+<meta property="og:title" content="Аксиома — сайты, приложения и ИИ-решения для бизнеса">
+<meta property="og:description" content="Разрабатываем цифровые сервисы под задачи вашей компании — от технического задания до запуска и внедрения.">
+<meta property="og:image" content="assets/earth-poster.webp">
+<script>document.documentElement.classList.add("js")</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/earth-poster.webp">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="nav" id="nav">
-  <a class="nav__brand" href="#top" aria-label="Аксиома"><span class="dot"></span>AXIOMA</a>
-  <nav class="nav__links">
+  <a class="nav__brand" href="#top" aria-label="Аксиома — наверх"><span class="nav__dot"></span>AXIOMA</a>
+  <nav class="nav__links" id="navLinks" aria-label="Разделы">
     <a href="#projects">Проекты</a>
-    <a href="#services">Что мы делаем для вас</a>
-    <a href="agents.html">ИИ-агенты</a>
-    <a href="#flow">Как работаем</a>
+    <a href="#services">Услуги</a>
+    <a href="#process">Как работаем</a>
     <a href="#about">О нас</a>
+    <a href="#contact">Контакты</a>
+    <span class="nav__bar" aria-hidden="true"></span>
   </nav>
-  <a class="btn btn--small js-wa" href="#contact">Обсудить задачу</a>
+  <a class="btn btn--sm nav__cta" href="#contact">Обсудить задачу</a>
+  <button class="nav__burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="navLinks"><i></i><i></i></button>
 </header>
 
 <!-- ============ HERO ============ -->
 <section class="hero" id="top">
-  <canvas id="stars" aria-hidden="true"></canvas>
+  <canvas class="hero__stars" id="heroStars" aria-hidden="true"></canvas>
   <div class="earth" aria-hidden="true">
     <div class="earth__glow"></div>
     <video class="earth__video" muted loop playsinline preload="auto" disablepictureinpicture poster="assets/earth-poster.webp">
@@ -32,17 +42,15 @@
       <source src="assets/earth.mp4" type="video/mp4">
     </video>
   </div>
-  <div class="hero__vignette"></div>
+  <div class="hero__shade"></div>
 
   <div class="hero__content">
-    <img class="hero__logo" src="assets/logo.png" alt="AXIOMA">
-    <p class="hero__tag"><span>//</span> цифровые сервисы · ИИ · автоматизация</p>
+    <h1 class="visually-hidden">Аксиома</h1>
+    <img class="hero__logo" src="assets/logo.png" alt="AXIOMA" width="780" height="115">
+    <p class="hero__tag">Цифровые сервисы <span>·</span> ИИ <span>·</span> Автоматизация</p>
   </div>
 
-  <a class="hero__scroll" href="#intro" aria-label="Прокрутить вниз"><i></i><span>scroll</span></a>
-  <div class="hero__hud" aria-hidden="true">
-    <span>LAT 41.2995° N</span><span>LON 69.2401° E</span><span id="hudClock">--:--:-- UTC</span>
-  </div>
+  <a class="hero__scroll" href="#intro" aria-label="Прокрутить вниз"><i></i></a>
 </section>
 
 <main>
@@ -50,141 +58,161 @@
 <!-- ============ INTRO ============ -->
 <section class="section intro" id="intro">
   <div class="wrap">
-    <p class="eyebrow reveal">01 / Что мы можем сделать для вашего бизнеса</p>
-    <h1 class="reveal">Сайты, приложения и&nbsp;<em>ИИ-агенты</em>, которые приводят клиентов и&nbsp;экономят ваше время</h1>
-    <p class="lead reveal">Разрабатываем цифровые сервисы под задачи вашей компании. Создаём сайты и приложения с оплатой и доставкой, подключаем ИИ-агентов к CRM и автоматизируем путь клиента от первого сообщения до заказа.</p>
-    <div class="actions reveal">
-      <a class="btn btn--primary" href="#projects">Посмотреть, как это работает</a>
-      <a class="btn btn--ghost js-wa" href="#contact">Обсудить мою задачу</a>
+    <div class="intro__grid">
+      <div>
+        <p class="kicker reveal">Аксиома · digital studio</p>
+        <h2 class="display reveal">Сайты, приложения и <em>ИИ&#8209;агенты</em> для бизнеса</h2>
+      </div>
+      <div class="intro__side">
+        <p class="lead reveal">Разрабатываем цифровые сервисы под задачи вашей компании: сайты и приложения с оплатой и доставкой, ИИ-агентов и автоматизацию процессов. Берём задачу от технического задания до запуска и внедрения.</p>
+        <div class="actions reveal">
+          <a class="btn btn--primary" href="#projects">Посмотреть проекты</a>
+          <a class="btn btn--ghost" href="#contact">Обсудить задачу</a>
+        </div>
+      </div>
     </div>
-    <ul class="chips reveal">
-      <li>Сайты</li><li>Приложения</li><li>ИИ-агенты</li><li>CRM</li><li>WhatsApp</li><li>Instagram</li><li>Оплата</li><li>Доставка</li>
+
+    <ul class="ticker reveal" aria-label="Направления">
+      <li>Сайты</li><li>Мобильные приложения</li><li>ИИ-агенты</li><li>Автоматизация процессов</li><li>Оплата и доставка</li><li>QR-меню</li>
     </ul>
 
-    <ul class="benefits">
-      <li class="reveal"><b>Клиенты не ждут ответа</b>Агент отвечает на сообщения сразу, в том числе вечером и в выходные.</li>
-      <li class="reveal"><b>Меньше ручной работы</b>Обращения, заказы и оплата попадают в CRM без переписывания вручную.</li>
-      <li class="reveal"><b>Всё в одной связке</b>Сайт, приложение, мессенджеры и учёт работают как единая система.</li>
+    <ul class="pillars">
+      <li class="reveal"><span class="pillars__n">I</span><b>Под вашу задачу</b><p>Состав функций подбираем под продукт, цены и правила конкретной компании.</p></li>
+      <li class="reveal"><span class="pillars__n">II</span><b>От идеи до запуска</b><p>Техническое задание, разработка, запуск и внедрение в работу — одной командой.</p></li>
+      <li class="reveal"><span class="pillars__n">III</span><b>Единая система</b><p>Сайт, приложение, каналы связи и внутренние системы работают вместе.</p></li>
     </ul>
   </div>
 </section>
 
-<!-- ============ PORTFOLIO ============ -->
-<section class="section" id="projects">
+<!-- ============ PROJECTS ============ -->
+<section class="section" id="projects" data-spy>
   <div class="wrap">
-    <p class="eyebrow reveal">02 / Портфолио</p>
-    <h2 class="reveal">Посмотрите, как это уже работает</h2>
+    <header class="sec-head reveal">
+      <span class="sec-head__n">01</span>
+      <h2>Проекты</h2>
+      <span class="sec-head__rule"></span>
+      <p class="sec-head__note">Что уже работает</p>
+    </header>
 
     <article class="case reveal">
-      <div class="case__shot">
-        <div class="phone">
-          <img class="phone__real" src="assets/mango.jpg" alt="Скриншот приложения Mango Fruits" onerror="this.remove()">
-          <div class="phone__empty">
-            <small>iOS-приложение</small>
-            <b>Mango Fruits</b>
-            <span>Здесь будут скриншоты приложения</span>
-          </div>
-        </div>
+      <div class="case__media" aria-hidden="true">
+        <div class="case__halo"></div>
+        <figure class="phone phone--back phone--l" data-depth="-0.06"><img src="assets/mango-delivery.webp" alt="" loading="lazy" width="600" height="1298"></figure>
+        <figure class="phone phone--back phone--r" data-depth="0.08"><img src="assets/mango-product.webp" alt="" loading="lazy" width="600" height="1298"></figure>
+        <figure class="phone phone--front" data-depth="0.02"><img src="assets/mango-catalog.webp" alt="" loading="lazy" width="600" height="1298"></figure>
       </div>
 
       <div class="case__info">
-        <span class="tag">Мобильное приложение · CRM</span>
-        <h3>Mango Fruits</h3>
-        <dl>
-          <dt>Что требовалось</dt>
-          <dd>Приложение для заказа продуктов — фруктов с доставкой в Алматы.</dd>
-          <dt>Что сделала «Аксиома»</dt>
-          <dd>Приложение для клиентов и панель администратора с CRM.</dd>
-          <dt>Как этим пользуются сейчас</dt>
-          <dd>Клиенты оформляют заказы в приложении из App Store, а администратор ведёт их и работает с клиентами в CRM.</dd>
+        <div class="case__title">
+          <img class="case__icon" src="assets/mango-icon.webp" alt="" width="56" height="56" loading="lazy">
+          <div>
+            <h3>Mango Fruits</h3>
+            <span class="case__meta">iOS-приложение · доставка по Алматы</span>
+          </div>
+        </div>
+
+        <dl class="case__qa">
+          <div><dt>Задача</dt><dd>Мобильное приложение, через которое клиенты заказывают фрукты и продукты с доставкой по Алматы.</dd></div>
+          <div><dt>Что сделали</dt><dd>Приложение для покупателей и панель администратора для работы с заказами и клиентами.</dd></div>
+          <div><dt>Как работает сейчас</dt><dd>Приложение опубликовано в App Store: клиенты оформляют заказы, команда магазина обрабатывает их в админке.</dd></div>
         </dl>
-        <a class="btn btn--ghost" href="https://apps.apple.com/us/app/mango-fruits/id6758238879" target="_blank" rel="noopener">Посмотреть в App Store <span aria-hidden="true">↗</span></a>
+
+        <ul class="case__features">
+          <li>Каталог с поиском и категориями</li>
+          <li>Карточки товаров и избранное</li>
+          <li>Корзина и адреса доставки</li>
+          <li>Выбор даты и времени доставки</li>
+          <li>Оплата картой</li>
+          <li>Панель администратора</li>
+        </ul>
+
+        <a class="btn btn--ghost" href="https://apps.apple.com/us/app/mango-fruits/id6758238879" target="_blank" rel="noopener">Открыть в App Store <span aria-hidden="true">↗</span></a>
       </div>
     </article>
 
-    <div class="case case--next reveal">
-      <div>
-        <span class="tag">Следующий проект</span>
-        <h3>Здесь может быть ваш</h3>
-        <p>Расскажите о задаче — предложим решение и покажем, как оно будет работать в вашем бизнесе.</p>
-      </div>
-      <a class="btn btn--primary js-wa" href="#contact">Обсудить мою задачу</a>
-    </div>
+    <a class="next-case reveal" href="#contact">
+      <span class="next-case__label">Следующий проект</span>
+      <span class="next-case__title">Здесь может быть ваш</span>
+      <span class="next-case__arrow" aria-hidden="true">→</span>
+    </a>
   </div>
 </section>
 
 <!-- ============ SERVICES ============ -->
-<section class="section" id="services">
+<section class="section" id="services" data-spy>
   <div class="wrap">
-    <p class="eyebrow reveal">03 / Чем мы занимаемся</p>
-    <h2 class="reveal">Что мы можем сделать для вас</h2>
+    <header class="sec-head reveal">
+      <span class="sec-head__n">02</span>
+      <h2>Услуги</h2>
+      <span class="sec-head__rule"></span>
+      <p class="sec-head__note">Чем мы занимаемся</p>
+    </header>
 
-    <div class="cards">
-      <article class="card reveal">
-        <span class="card__n">01</span>
-        <svg class="card__ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="9" width="38" height="30" rx="3"/><path d="M5 17h38"/><circle cx="10" cy="13" r=".8" fill="currentColor"/><circle cx="14" cy="13" r=".8" fill="currentColor"/><path d="M13 27l-3 3 3 3M35 27l3 3-3 3M21 34l6-8"/></svg>
+    <div class="services">
+      <article class="svc reveal">
+        <span class="svc__n">01</span>
         <h3>Сайты и веб-сервисы</h3>
-        <p>Разработаем сайт по вашему техническому заданию, запустим и внедрим в работу компании. В портфолио показываем конкретные форматы, которые уже делали.</p>
+        <p>Разрабатываем сайты по техническому заданию клиента, запускаем и внедряем их в работу компании.</p>
+        <span class="svc__tags">Лендинги · Интернет-магазины · Веб-сервисы</span>
       </article>
 
-      <article class="card reveal">
-        <span class="card__n">02</span>
-        <svg class="card__ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="14" y="4" width="20" height="40" rx="4"/><path d="M21 38h6"/><path d="M19 16h10M19 22h10M19 28h6"/></svg>
+      <article class="svc reveal">
+        <span class="svc__n">02</span>
         <h3>Приложения и мультисервисные платформы</h3>
-        <p>Создадим приложение, где ваш клиент выберет услугу или товар, посмотрит точки на карте, оплатит заказ и оформит доставку. Состав функций зависит от задачи вашего бизнеса.</p>
+        <p>Клиент выбирает услугу или товар, смотрит точки на карте, оплачивает заказ и оформляет доставку. Состав функций зависит от задачи бизнеса.</p>
+        <span class="svc__tags">iOS · Android · Оплата · Доставка</span>
       </article>
 
-      <article class="card reveal">
-        <span class="card__n">03</span>
-        <svg class="card__ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="11" y="14" width="26" height="20" rx="5"/><path d="M24 14V8"/><circle cx="24" cy="6" r="2"/><circle cx="19" cy="24" r="2"/><circle cx="29" cy="24" r="2"/><path d="M20 30h8M6 22v4M42 22v4"/></svg>
+      <article class="svc reveal">
+        <span class="svc__n">03</span>
         <h3>ИИ-агенты для продаж и поддержки</h3>
-        <p>Настроим агента под ваши продукты, цены и правила, подключим к CRM, WhatsApp и Instagram. Он отвечает клиентам, уточняет запрос, фиксирует обращение и передаёт диалог менеджеру, когда нужно его участие. Голосовые агенты принимают звонки.</p>
-        <a class="card__more" href="agents.html">Как это выглядит + демо-чат →</a>
+        <p>Настраиваем агентов под продукты, цены и правила компании: агент отвечает на сообщения, уточняет запрос и передаёт диалог менеджеру, когда нужно. Голосовые агенты принимают звонки.</p>
+        <a class="svc__more" href="agents.html">Подробнее об ИИ-агентах <span aria-hidden="true">→</span></a>
       </article>
 
-      <article class="card reveal">
-        <span class="card__n">04</span>
-        <svg class="card__ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="24" r="5"/><circle cx="38" cy="12" r="5"/><circle cx="38" cy="36" r="5"/><path d="M15 24h8l10-10M23 24l10 10"/></svg>
+      <article class="svc reveal">
+        <span class="svc__n">04</span>
         <h3>Цифровизация бизнес-процессов</h3>
-        <p>Свяжем этапы вашей работы: обращение клиента, заказ, оплату, доставку и учёт в CRM. Например, QR-меню для кафе и ресторанов.</p>
+        <p>Связываем этапы работы компании: обращение клиента, заказ, оплату, доставку и учёт. Например, QR-меню для кафе и ресторанов.</p>
+        <span class="svc__tags">Интеграции · Автоматизация · QR-меню</span>
       </article>
     </div>
   </div>
 </section>
 
-<!-- ============ FLOW ============ -->
-<section class="section" id="flow">
+<!-- ============ PROCESS ============ -->
+<section class="section" id="process" data-spy>
   <div class="wrap">
-    <p class="eyebrow reveal">04 / Путь вашего клиента</p>
-    <h2 class="reveal">От первого сообщения до заказа</h2>
-    <ol class="flow">
-      <li class="reveal"><b>Обращение</b><span>Клиент пишет в WhatsApp, Instagram, звонит или заходит на сайт</span></li>
-      <li class="reveal"><b>ИИ-агент</b><span>Отвечает, уточняет запрос, фиксирует обращение</span></li>
-      <li class="reveal"><b>CRM</b><span>Диалог и клиент попадают в учёт; менеджер подключается, когда нужно</span></li>
-      <li class="reveal"><b>Заказ и оплата</b><span>Через сайт или приложение</span></li>
-      <li class="reveal"><b>Доставка</b><span>Оформление и статус заказа</span></li>
+    <header class="sec-head reveal">
+      <span class="sec-head__n">03</span>
+      <h2>Как работаем</h2>
+      <span class="sec-head__rule"></span>
+      <p class="sec-head__note">От задачи до запуска</p>
+    </header>
+
+    <ol class="steps" id="steps">
+      <li class="reveal"><span class="steps__dot"></span><b>Обсуждаем задачу</b><p>Разбираемся в бизнесе, процессах и цели проекта.</p></li>
+      <li class="reveal"><span class="steps__dot"></span><b>Техническое задание</b><p>Фиксируем состав функций и то, как сервис встроится в работу компании.</p></li>
+      <li class="reveal"><span class="steps__dot"></span><b>Разработка</b><p>Дизайн, разработка, подключение оплаты, доставки и нужных систем.</p></li>
+      <li class="reveal"><span class="steps__dot"></span><b>Запуск и внедрение</b><p>Публикуем, запускаем и помогаем встроить сервис в работу команды.</p></li>
+      <span class="steps__line" aria-hidden="true"><i></i></span>
     </ol>
-    <div class="actions reveal" style="margin-top:44px">
-      <a class="btn btn--ghost" href="agents.html">Посмотреть сценарий с ИИ-агентом</a>
-    </div>
   </div>
 </section>
 
 <!-- ============ ABOUT ============ -->
-<section class="section" id="about">
+<section class="section" id="about" data-spy>
   <div class="wrap">
-    <div class="about">
-      <div>
-        <p class="eyebrow reveal">05 / О компании</p>
-        <h2 class="reveal">Меньше ручной работы — быстрее к клиенту</h2>
-      </div>
-      <div class="about__text reveal">
-        <p>Цель «Аксиомы» — помогать компаниям тратить меньше времени на ручную работу и быстрее обслуживать клиентов. Для этого мы объединяем сайты, приложения, каналы связи и внутренние системы бизнеса.</p>
-      </div>
-    </div>
+    <header class="sec-head reveal">
+      <span class="sec-head__n">04</span>
+      <h2>О компании</h2>
+      <span class="sec-head__rule"></span>
+      <p class="sec-head__note">Цель и дорожная карта</p>
+    </header>
 
-    <h3 class="roadmap__title reveal">Дорожная карта</h3>
-    <ol class="roadmap">
+    <p class="statement reveal">Цель «Аксиомы» — помогать компаниям тратить меньше времени на ручную работу и быстрее обслуживать клиентов. Для этого мы объединяем сайты, приложения, каналы связи и внутренние системы бизнеса.</p>
+
+    <ol class="roadmap" id="roadmap">
       <li class="reveal">
         <span class="roadmap__year">2025</span>
         <b>Начало работы команды</b>
@@ -205,13 +233,29 @@
 </section>
 
 <!-- ============ CONTACT ============ -->
-<section class="section contact" id="contact">
+<section class="section contact" id="contact" data-spy>
   <div class="wrap">
-    <div class="contact__box reveal">
-      <p class="eyebrow">06 / Контакты</p>
-      <h2>Расскажите о своей задаче</h2>
-      <p class="lead">Напишите нам в WhatsApp или спросите ИИ-агента прямо здесь — подскажем, что можно автоматизировать и с чего начать.</p>
-      <a class="btn btn--primary btn--big js-wa" href="#contact">Написать в WhatsApp</a>
+    <header class="sec-head reveal">
+      <span class="sec-head__n">05</span>
+      <h2>Контакты</h2>
+      <span class="sec-head__rule"></span>
+      <p class="sec-head__note">Обсудим вашу задачу</p>
+    </header>
+
+    <div class="contact__grid">
+      <div class="contact__info reveal">
+        <h3 class="contact__title">Расскажите о&nbsp;задаче — подскажем, с&nbsp;чего начать</h3>
+        <p class="contact__text">В WhatsApp вам ответит команда «Аксиомы». А если хотите быстро разобраться, что мы можем сделать, — спросите ИИ-ассистента прямо здесь.</p>
+        <a class="wa-btn js-wa" href="#contact">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91A9.92 9.92 0 0 0 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24a8.24 8.24 0 0 1 8.24 8.25c0 4.54-3.7 8.23-8.24 8.23Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.14.16-.29.18-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.44.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48a.92.92 0 0 0-.66.31c-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.28Z"/></svg>
+          <span><b>Написать в WhatsApp</b><small>Отвечает команда «Аксиомы»</small></span>
+          <i aria-hidden="true">↗</i>
+        </a>
+      </div>
+
+      <div class="contact__chat reveal">
+        <div class="chat" data-chat></div>
+      </div>
     </div>
   </div>
 </section>
@@ -219,9 +263,11 @@
 </main>
 
 <footer class="footer">
-  <span>© <span id="year"></span> Аксиома</span>
-  <span class="mono">AXIOMA // digital · AI · automation</span>
-  <span class="credit">Видео Земли: <a href="https://svs.gsfc.nasa.gov/30878/" target="_blank" rel="noopener">NASA Goddard Space Flight Center</a> · Black Marble 2016 (М. Роман, Дж. Стивенс)</span>
+  <div class="wrap footer__in">
+    <img class="footer__logo" src="assets/logo.png" alt="AXIOMA" width="780" height="115" loading="lazy">
+    <span>© <span id="year"></span> Аксиома</span>
+    <span class="footer__credit">Видео Земли: <a href="https://svs.gsfc.nasa.gov/30878/" target="_blank" rel="noopener">NASA Goddard Space Flight Center</a>, Black Marble 2016</span>
+  </div>
 </footer>
 
 <script src="config.js"></script>

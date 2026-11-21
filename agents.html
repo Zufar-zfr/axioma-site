@@ -4,104 +4,107 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ИИ-агенты для продаж и поддержки — Аксиома</title>
-<meta name="description" content="ИИ-агенты в WhatsApp и Instagram: отвечают клиентам, уточняют запрос, создают сделку в CRM и передают диалог менеджеру.">
-<meta name="theme-color" content="#04060d">
+<meta name="description" content="ИИ-агенты под продукты, цены и правила вашей компании: отвечают клиентам, уточняют запрос и передают диалог менеджеру.">
+<meta name="theme-color" content="#05070d">
+<script>document.documentElement.classList.add("js")</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-solid>
 
 <header class="nav is-solid" id="nav">
-  <a class="nav__brand" href="index.html" aria-label="Аксиома"><span class="dot"></span>AXIOMA</a>
-  <nav class="nav__links">
+  <a class="nav__brand" href="index.html" aria-label="Аксиома — на главную"><span class="nav__dot"></span>AXIOMA</a>
+  <nav class="nav__links" id="navLinks" aria-label="Разделы">
     <a href="index.html#projects">Проекты</a>
-    <a href="index.html#services">Что делаем</a>
-    <a href="#demo">Демо-чат</a>
+    <a href="index.html#services">Услуги</a>
+    <a href="index.html#process">Как работаем</a>
     <a href="index.html#about">О нас</a>
+    <a href="index.html#contact">Контакты</a>
   </nav>
-  <a class="btn btn--small js-wa" href="index.html#contact">Обсудить задачу</a>
+  <a class="btn btn--sm nav__cta" href="index.html#contact">Обсудить задачу</a>
+  <button class="nav__burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="navLinks"><i></i><i></i></button>
 </header>
 
 <main>
 <section class="page-head">
   <div class="wrap">
-    <p class="eyebrow reveal">ИИ-агенты для продаж и поддержки</p>
-    <h1 class="reveal">Агент, который отвечает клиентам <em>даже вечером</em></h1>
-    <p class="lead reveal">Настраиваем агентов под продукты, цены и правила вашей компании. Подключаем к CRM, WhatsApp и Instagram. Агент отвечает на сообщения, уточняет запрос, фиксирует обращение и передаёт диалог менеджеру, когда требуется его участие. Голосовые агенты принимают звонки.</p>
+    <p class="kicker reveal">Услуги · ИИ-агенты</p>
+    <h1 class="display reveal">ИИ&#8209;агенты для <em>продаж и поддержки</em></h1>
+    <p class="lead reveal">Настраиваем агентов под продукты, цены и правила конкретной компании. Агент отвечает на сообщения, уточняет запрос, фиксирует обращение и передаёт диалог менеджеру, когда требуется его участие. Голосовые агенты принимают звонки.</p>
     <div class="actions reveal">
-      <a class="btn btn--primary js-wa-demo" href="#demo">Попробовать в WhatsApp</a>
-      <a class="btn btn--ghost" href="#demo">Открыть демо-чат</a>
+      <a class="btn btn--primary" href="#demo">Поговорить с ассистентом</a>
+      <a class="btn btn--ghost" href="index.html#contact">Обсудить задачу</a>
     </div>
   </div>
 </section>
 
 <section class="section" id="scenario">
   <div class="wrap">
-    <p class="eyebrow reveal">Как это выглядит на практике</p>
-    <h2 class="reveal">Один вечер — одна сделка</h2>
-    <ol class="steps">
-      <li class="reveal"><time>Вечер</time><b>Клиент пишет в WhatsApp</b><p>Вопрос о товаре или услуге в нерабочее время — без ожидания ответа до утра.</p></li>
-      <li class="reveal"><time>Сразу</time><b>Агент уточняет запрос</b><p>Задаёт нужные вопросы, отвечает по вашим продуктам, ценам и правилам.</p></li>
-      <li class="reveal"><time>Сразу</time><b>Создаётся сделка в CRM</b><p>Обращение фиксируется: контакт, суть запроса, статус.</p></li>
-      <li class="reveal"><time>Утро</time><b>Менеджер видит всё</b><p>Запрос и полная история переписки уже в CRM — остаётся подключиться и закрыть сделку.</p></li>
+    <header class="sec-head reveal">
+      <span class="sec-head__n">01</span>
+      <h2>Как это выглядит</h2>
+      <span class="sec-head__rule"></span>
+      <p class="sec-head__note">Один вечер — одна заявка</p>
+    </header>
+    <ol class="scenario">
+      <li class="reveal"><time>Вечер</time><b>Клиент пишет</b><p>Вопрос о товаре или услуге в нерабочее время.</p></li>
+      <li class="reveal"><time>Сразу</time><b>Агент уточняет запрос</b><p>Отвечает по вашим продуктам, ценам и правилам и задаёт нужные вопросы.</p></li>
+      <li class="reveal"><time>Сразу</time><b>Обращение зафиксировано</b><p>Контакт и суть запроса сохраняются в вашей системе.</p></li>
+      <li class="reveal"><time>Утро</time><b>Менеджер видит всё</b><p>Запрос и история переписки уже под рукой — остаётся подключиться.</p></li>
     </ol>
   </div>
 </section>
 
 <section class="section" id="demo">
   <div class="wrap">
-    <p class="eyebrow reveal">Демо</p>
-    <h2 class="reveal">Спросите агента сами</h2>
-    <div class="demo reveal">
-      <div class="chat" id="chatMount"></div>
-
-      <aside class="crm">
-        <h3>Что видит менеджер в CRM</h3>
-        <p class="crm__sub">Карточка заполняется по ходу диалога</p>
-        <dl>
-          <div><dt>Канал</dt><dd id="crmChannel">—</dd></div>
-          <div><dt>Запрос клиента</dt><dd id="crmTopic">—</dd></div>
-          <div><dt>Контакт</dt><dd id="crmContact">—</dd></div>
-          <div><dt>Сообщений в истории</dt><dd id="crmCount">0</dd></div>
-          <div><dt>Статус</dt><dd><span class="crm__badge" id="crmStatus">Нет обращения</span></dd></div>
-        </dl>
-      </aside>
+    <header class="sec-head reveal">
+      <span class="sec-head__n">02</span>
+      <h2>Попробуйте</h2>
+      <span class="sec-head__rule"></span>
+      <p class="sec-head__note">Ассистент на сайте</p>
+    </header>
+    <div class="demo">
+      <div class="demo__text reveal">
+        <h3 class="contact__title">Так может звучать агент вашей компании</h3>
+        <p>Это ассистент «Аксиомы» на сайте. Рабочий агент для вашего бизнеса настраивается под ваши продукты, цены и правила.</p>
+      </div>
+      <div class="reveal"><div class="chat" data-chat></div></div>
     </div>
-    <p class="lead reveal" style="font-size:14px;margin-top:20px">Это упрощённая демонстрация на заранее заданных сценариях. Рабочий агент настраивается под ваши продукты, цены и подключается к реальной CRM.</p>
   </div>
 </section>
 
 <section class="section" id="caps">
   <div class="wrap">
-    <p class="eyebrow reveal">Возможности</p>
-    <h2 class="reveal">Что умеет агент</h2>
+    <header class="sec-head reveal">
+      <span class="sec-head__n">03</span>
+      <h2>Что умеет агент</h2>
+      <span class="sec-head__rule"></span>
+    </header>
     <ul class="caps">
-      <li class="reveal"><b>Отвечает на сообщения</b>WhatsApp и Instagram, по вашим продуктам, ценам и правилам.</li>
+      <li class="reveal"><b>Отвечает на сообщения</b>По вашим продуктам, ценам и правилам.</li>
       <li class="reveal"><b>Уточняет запрос</b>Собирает детали, чтобы менеджер не переспрашивал клиента.</li>
-      <li class="reveal"><b>Фиксирует обращение</b>Создаёт сделку в CRM и сохраняет историю переписки.</li>
+      <li class="reveal"><b>Фиксирует обращение</b>Сохраняет контакт и историю переписки.</li>
       <li class="reveal"><b>Передаёт менеджеру</b>Подключает человека, когда нужно его участие.</li>
       <li class="reveal"><b>Принимает звонки</b>Голосовые агенты отвечают на входящие звонки.</li>
       <li class="reveal"><b>Настраивается под бизнес</b>Знания и правила агента — ваши, а не шаблонные.</li>
     </ul>
-  </div>
-</section>
-
-<section class="section contact" id="contact">
-  <div class="wrap">
-    <div class="contact__box reveal">
-      <h2>Хотите такого агента для своей компании?</h2>
-      <p class="lead">Попробуйте демо в WhatsApp или опишите задачу — подскажем, с чего начать.</p>
-      <div class="actions" style="justify-content:center">
-        <a class="btn btn--primary btn--big js-wa-demo" href="#demo">Попробовать в WhatsApp</a>
-        <a class="btn btn--ghost btn--big js-wa" href="index.html#contact">Обсудить задачу</a>
-      </div>
-    </div>
+    <a class="next-case reveal" href="index.html#contact">
+      <span class="next-case__label">Следующий шаг</span>
+      <span class="next-case__title">Обсудить агента для вашей компании</span>
+      <span class="next-case__arrow" aria-hidden="true">→</span>
+    </a>
   </div>
 </section>
 </main>
 
 <footer class="footer">
-  <span>© <span id="year"></span> Аксиома</span>
-  <a class="mono" href="index.html">← на главную</a>
+  <div class="wrap footer__in">
+    <img class="footer__logo" src="assets/logo.png" alt="AXIOMA" width="780" height="115" loading="lazy">
+    <span>© <span id="year"></span> Аксиома</span>
+    <a href="index.html">← На главную</a>
+  </div>
 </footer>
 
 <script src="config.js"></script>

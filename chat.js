@@ -1,155 +1,111 @@
 /*
- * Чат с ИИ-агентом «Аксиомы».
+ * ИИ-ассистент на сайте «Аксиомы».
+ * Встраивается в каждый элемент с атрибутом data-chat.
  *
- * Режимы:
- *  - Пока window.AXIOMA_CONFIG.chatApiUrl пустой — отвечает локальный демо-сценарий (без сервера).
- *  - Когда укажете URL в config.js — каждое сообщение уходит на ваш API:
+ * Пока window.AXIOMA_CONFIG.chatApiUrl пустой — отвечает заготовленными ответами.
+ * Когда укажете URL в config.js — сообщения уходят на ваш API:
  *
- *    POST {chatApiUrl}
- *    Content-Type: application/json
- *    { "sessionId": "abc123",
- *      "message": "текст клиента",
- *      "history": [ {"role":"user"|"assistant","content":"..."} ] }
+ *   POST {chatApiUrl}   Content-Type: application/json
+ *   { "sessionId": "…", "message": "текст посетителя",
+ *     "history": [ {"role":"user"|"assistant","content":"…"} ] }
  *
- *    Ответ 200 JSON:
- *    { "reply": "текст агента",
- *      "crm": { "topic": "...", "contact": "...", "status": "..." }   // необязательно
- *    }
+ *   Ответ 200: { "reply": "текст ассистента" }
  */
 (function () {
   const CFG = window.AXIOMA_CONFIG || {};
-  const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
-  const history = [];
+  const sessionId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
 
-  /* ---------- Локальный демо-агент ---------- */
-  const topics = [
-    { re: /сайт|веб|лендинг|интернет-магазин|магазин/i, name: "Сайт / веб-сервис",
-      reply: "Делаем сайты по вашему техническому заданию и внедряем в работу компании. Для какого бизнеса сайт и нужна ли онлайн-оплата?" },
-    { re: /приложен|мобил|платформ|карт|доставк/i, name: "Приложение / платформа",
-      reply: "Создаём приложения: клиент выбирает товар или услугу, смотрит точки на карте, оплачивает и оформляет доставку. Какие функции нужны в первую очередь?" },
-    { re: /агент|бот|whatsapp|ватсап|instagram|инстаграм|чат|звон|голос/i, name: "ИИ-агент",
-      reply: "Настроим агента под ваши продукты, цены и правила, подключим к CRM, WhatsApp и Instagram. Через какой канал вам чаще всего пишут клиенты?" },
-    { re: /crm|цифров|автоматиз|qr|меню|кафе|ресторан|процесс/i, name: "Цифровизация процессов",
-      reply: "Свяжем обращение клиента, заказ, оплату, доставку и учёт в CRM. Что сейчас в вашей работе делается вручную?" },
+  /* ---------- заготовленные ответы (пока нет API) ---------- */
+  const rules = [
+    { re: /mango|манго|пример|портфол|проект|кейс|делали/i,
+      a: "Например, Mango Fruits — iOS-приложение доставки фруктов и продуктов по Алматы: каталог с поиском, корзина, выбор даты и времени доставки, оплата картой и панель администратора. Подробнее — в разделе «Проекты»." },
+    { re: /сайт|веб|лендинг|интернет-магазин|магазин/i,
+      a: "Делаем сайты по техническому заданию — от лендинга до интернет-магазина и веб-сервиса — и помогаем внедрить их в работу компании. Расскажите, для какого бизнеса сайт и что он должен уметь?" },
+    { re: /приложен|мобил|ios|android|платформ|карт|доставк|оплат/i,
+      a: "Создаём приложения, где клиент выбирает товар или услугу, смотрит точки на карте, оплачивает заказ и оформляет доставку. Какие функции нужны вам в первую очередь?" },
+    { re: /агент|бот|ии|нейросет|ai|звон|голос/i,
+      a: "Настраиваем ИИ-агентов под продукты, цены и правила компании: агент отвечает клиентам, уточняет запрос и передаёт диалог менеджеру, когда нужно. Голосовые агенты принимают звонки. Подробнее — на странице «ИИ-агенты»." },
+    { re: /автоматиз|процесс|qr|меню|кафе|ресторан|учёт|учет|интеграц/i,
+      a: "Связываем этапы работы: обращение клиента, заказ, оплату, доставку и учёт. Для кафе и ресторанов, например, делаем QR-меню. Что сейчас в вашей работе делается вручную?" },
+    { re: /цен|стоим|сколько|прайс|бюджет/i,
+      a: "Стоимость зависит от задачи и состава функций. Опишите, что нужно, — а точный расчёт подготовит команда. Быстрее всего — написать нам в WhatsApp." },
+    { re: /срок|когда|долго|быстро/i,
+      a: "Сроки зависят от объёма работ — команда оценит их после обсуждения задачи." },
+    { re: /менеджер|человек|связ|контакт|позвон|whatsapp|ватсап|вотсап|телефон/i,
+      a: "С вами на связи будет команда «Аксиомы» — напишите нам в WhatsApp, кнопка рядом с чатом." },
+    { re: /^(прив|здрав|добр|hello|hi|салам|ассалам)/i,
+      a: "Здравствуйте! Чем можем помочь — сайт, приложение, ИИ-агент или автоматизация процессов?" },
   ];
-  const price = /цен|стоим|сколько|прайс/i;
-  const human = /менеджер|человек|оператор|позвон/i;
-  const hello = /^(прив|здрав|добрый|hello|hi|салам|ассалам)/i;
-  let asked = false, hasTopic = false;
-
+  let fallbackUsed = false;
   function localReply(text) {
-    const phone = text.match(/(\+?\d[\d\s\-()]{8,})/);
-    if (phone) return { reply: "Спасибо, контакт записал. Менеджер увидит ваш запрос и всю переписку в CRM и свяжется с вами.", crm: { contact: phone[1].trim() } };
-    if (human.test(text)) return { reply: "Передаю диалог менеджеру — он увидит всю историю переписки. Оставьте номер телефона, и он свяжется с вами.", crm: hasTopic ? { status: "Передано менеджеру" } : {} };
-    const t = topics.find(x => x.re.test(text));
-    if (t) { hasTopic = true; return { reply: t.reply, crm: { topic: t.name, status: "Новая сделка" } }; }
-    if (price.test(text)) return { reply: "Стоимость зависит от задачи и состава функций. Опишите, что нужно, — зафиксирую запрос, и менеджер подготовит расчёт." };
-    if (hello.test(text.trim())) return { reply: "Здравствуйте! Чем помочь вашему бизнесу — сайт, приложение, ИИ-агент или автоматизация процессов?" };
-    if (!asked) { asked = true; return { reply: "Уточню, чтобы ничего не перепутать: вас интересует сайт, приложение, ИИ-агент или автоматизация процессов?" }; }
-    return { reply: "Записал. Если нужно, передам диалог менеджеру — напишите «менеджер»." };
+    const r = rules.find(x => x.re.test(text));
+    if (r) return r.a;
+    if (!fallbackUsed) { fallbackUsed = true; return "Уточните, пожалуйста: вас интересует сайт, мобильное приложение, ИИ-агент или автоматизация процессов?"; }
+    return "Чтобы обсудить детали, напишите нам в WhatsApp — ответит команда «Аксиомы»."
   }
 
-  async function getReply(text) {
+  async function getReply(text, history) {
     if (!CFG.chatApiUrl) {
-      await new Promise(r => setTimeout(r, 700 + Math.min(text.length * 8, 900)));
+      await new Promise(r => setTimeout(r, 650 + Math.min(text.length * 8, 800)));
       return localReply(text);
     }
     try {
       const res = await fetch(CFG.chatApiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, message: text, history: history.slice(0, -1) }),
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      return { reply: data.reply || "…", crm: data.crm };
+      return (await res.json()).reply || "…";
     } catch (e) {
       console.warn("Chat API error", e);
-      return { reply: "Не удалось связаться с агентом. Попробуйте ещё раз или напишите нам в WhatsApp." };
+      return "Не удалось получить ответ. Попробуйте ещё раз или напишите нам в WhatsApp.";
     }
   }
 
-  /* ---------- Интерфейс ---------- */
-  function build(root, { onCrm, onCount } = {}) {
+  /* ---------- интерфейс ---------- */
+  function mount(root) {
+    const history = [];
     root.innerHTML = `
       <div class="chat__head">
         <div class="chat__ava">A</div>
-        <div><b>ИИ-агент «Аксиомы»</b><small>● онлайн</small></div>
-        <button type="button" class="chat__close" aria-label="Закрыть" hidden>×</button>
+        <div><b>ИИ-ассистент «Аксиомы»</b><small>на сайте, отвечает сразу</small></div>
       </div>
       <div class="chat__log" aria-live="polite"></div>
       <div class="chat__quick"></div>
       <form class="chat__form" autocomplete="off">
-        <input type="text" placeholder="Напишите сообщение…" aria-label="Сообщение">
+        <input type="text" placeholder="Например: нужен сайт с оплатой" aria-label="Сообщение">
         <button type="submit">Отправить</button>
-      </form>`;
-    const log = root.querySelector(".chat__log");
-    const quick = root.querySelector(".chat__quick");
-    const form = root.querySelector(".chat__form");
-    const input = form.querySelector("input");
-    let busy = false, count = 0;
+      </form>
+      ${CFG.chatApiUrl ? "" : '<p class="chat__note">Ответы ассистента ознакомительные. Точные условия обсудим в WhatsApp.</p>'}`;
+    const log = root.querySelector(".chat__log"), quick = root.querySelector(".chat__quick");
+    const form = root.querySelector(".chat__form"), input = form.querySelector("input");
+    let busy = false;
 
-    function add(text, who) {
+    const add = (text, who) => {
       const d = document.createElement("div");
       d.className = "msg msg--" + who; d.textContent = text;
       log.appendChild(d); log.scrollTop = log.scrollHeight;
       history.push({ role: who === "me" ? "user" : "assistant", content: text });
-      onCount && onCount(++count);
-    }
-    function typing() {
+    };
+    const typing = () => {
       const t = document.createElement("div");
       t.className = "msg msg--bot typing"; t.innerHTML = "<i></i><i></i><i></i>";
       log.appendChild(t); log.scrollTop = log.scrollHeight;
       return () => t.remove();
-    }
+    };
     async function send(text) {
       text = text.trim(); if (!text || busy) return;
       busy = true; add(text, "me"); input.value = "";
-      const stop = typing();
-      const r = await getReply(text);
-      stop(); add(r.reply, "bot");
-      if (r.crm && onCrm) onCrm(r.crm);
-      busy = false; input.focus();
+      const stop = typing(); const reply = await getReply(text, history);
+      stop(); add(reply, "bot"); busy = false;
     }
     form.addEventListener("submit", e => { e.preventDefault(); send(input.value); });
-    ["Нужен сайт", "Хочу ИИ-агента", "Сколько стоит?", "Позвать менеджера"].forEach(q => {
+    ["Нужен сайт", "Мобильное приложение", "ИИ-агент для бизнеса", "Сколько стоит?"].forEach(q => {
       const b = document.createElement("button"); b.type = "button"; b.textContent = q;
       b.onclick = () => send(q); quick.appendChild(b);
     });
-    add("Здравствуйте! Я ИИ-агент «Аксиомы». Расскажите о задаче вашего бизнеса или выберите вариант ниже.", "bot");
-    return { input, root };
+    add("Здравствуйте! Я ИИ-ассистент «Аксиомы». Расскажу, что мы делаем, и помогу сформулировать задачу. Выберите вариант ниже или напишите свой вопрос.", "bot");
   }
 
-  /* ---------- Встроенный чат (страница агентов) ---------- */
-  const inline = document.getElementById("chatMount");
-  if (inline) {
-    const $ = id => document.getElementById(id);
-    build(inline, {
-      onCount: n => { $("crmCount").textContent = n; if (n > 1) { $("crmChannel").textContent = "Сайт (демо)"; $("crmChannel").classList.add("is-set"); } },
-      onCrm: c => {
-        if (c.topic) { $("crmTopic").textContent = c.topic; $("crmTopic").classList.add("is-set"); }
-        if (c.contact) { $("crmContact").textContent = c.contact; $("crmContact").classList.add("is-set"); }
-        if (c.status) { $("crmStatus").textContent = c.status; $("crmStatus").classList.toggle("is-new", /нов/i.test(c.status)); }
-      },
-    });
-    return;
-  }
-
-  /* ---------- Плавающий чат на остальных страницах ---------- */
-  const fab = document.createElement("button");
-  fab.className = "chat-fab"; fab.type = "button";
-  fab.innerHTML = '<span class="chat-fab__dot"></span>Спросить ИИ-агента';
-  const panel = document.createElement("div");
-  panel.className = "chat chat--float"; panel.hidden = true;
-  document.body.append(fab, panel);
-  let ui = null;
-  const toggle = open => {
-    panel.hidden = !open; fab.classList.toggle("is-open", open);
-    if (open && !ui) {
-      ui = build(panel);
-      const x = panel.querySelector(".chat__close"); x.hidden = false; x.onclick = () => toggle(false);
-    }
-    if (open) setTimeout(() => ui.input.focus(), 50);
-  };
-  fab.onclick = () => toggle(panel.hidden);
+  document.querySelectorAll("[data-chat]").forEach(mount);
 })();

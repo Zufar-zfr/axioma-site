@@ -1,159 +1,201 @@
-/* ===== Настройки ===== */
-// Номер WhatsApp в международном формате без "+" и пробелов, например "998901234567"
-const WHATSAPP_NUMBER = "";
-const WHATSAPP_TEXT = "Здравствуйте! Хочу обсудить задачу для моего бизнеса.";
-// Ссылка на сайт проекта Mango Fruits (когда будет публичный адрес)
-const MANGO_URL = "";
-// Номер демонстрационного ИИ-агента в WhatsApp (кнопка «Попробовать в WhatsApp»)
-const DEMO_WHATSAPP_NUMBER = "";
+/* =========================================================
+   AXIOMA — поведение страницы
+   ========================================================= */
+const CFG = window.AXIOMA_CONFIG || {};
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const DPR = () => Math.min(devicePixelRatio || 1, 2);
 
-/* ===== Ссылки ===== */
+/* ---------- WhatsApp и год ---------- */
 document.querySelectorAll(".js-wa").forEach(a => {
-  if (WHATSAPP_NUMBER) {
-    a.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_TEXT)}`;
+  if (CFG.whatsappNumber) {
+    a.href = `https://wa.me/${CFG.whatsappNumber}?text=${encodeURIComponent(CFG.whatsappText || "")}`;
     a.target = "_blank"; a.rel = "noopener";
+  } else {
+    a.addEventListener("click", e => { e.preventDefault(); console.warn("Укажите whatsappNumber в config.js"); });
   }
-});
-document.querySelectorAll(".js-wa-demo").forEach(a => {
-  const n = DEMO_WHATSAPP_NUMBER || WHATSAPP_NUMBER;
-  if (n) { a.href = `https://wa.me/${n}?text=${encodeURIComponent("Привет! Хочу попробовать ИИ-агента.")}`; a.target = "_blank"; a.rel = "noopener"; }
-  else { a.href = "#demo"; }
-});
-document.querySelectorAll("[data-project-link]").forEach(a => {
-  if (MANGO_URL) { a.href = MANGO_URL; a.target = "_blank"; a.rel = "noopener"; }
-  else { a.addEventListener("click", e => e.preventDefault()); a.style.opacity = ".5"; a.style.cursor = "default"; }
 });
 const yr = document.getElementById("year"); if (yr) yr.textContent = new Date().getFullYear();
 
-/* ===== Шапка и появление блоков ===== */
-const nav = document.getElementById("nav");
-const onScroll = () => nav.classList.toggle("is-solid", "solid" in document.body.dataset || scrollY > window.innerHeight * 0.6);
-addEventListener("scroll", onScroll, { passive: true }); onScroll();
+/* ---------- небо за контентом: звёзды с параллаксом и редкие кометы ---------- */
+const sky = (function () {
+  const c = document.createElement("canvas"); c.className = "sky"; c.setAttribute("aria-hidden", "true");
+  const prog = document.createElement("div"); prog.className = "progress";
+  document.body.prepend(c, prog);
+  const ctx = c.getContext("2d");
+  let w, h, d, stars = [], comets = [], lastComet = 0;
 
+  function resize() {
+    d = DPR(); w = c.width = innerWidth * d; h = c.height = innerHeight * d;
+    const n = Math.round(innerWidth * innerHeight / 6500);
+    stars = Array.from({ length: n }, () => {
+      const z = Math.random();                                  // глубина: дальние мельче и медленнее
+      return { x: Math.random() * w, y: Math.random() * h, z, r: (.3 + z * 1.0) * d, p: Math.random() * 6.28, s: .2 + Math.random() * .8 };
+    });
+  }
+  function comet(force) {
+    const now = performance.now();
+    if (REDUCE || (!force && now - lastComet < 3500)) return;
+    lastComet = now;
+    const dir = Math.random() < .5 ? -1 : 1;                    // слева направо или справа налево
+    const ang = (dir > 0 ? 0.42 : Math.PI - 0.42) + (Math.random() - .5) * .25;
+    const sp = (900 + Math.random() * 600) * d;
+    comets.push({
+      x: dir > 0 ? Math.random() * w * .5 : w * .5 + Math.random() * w * .5,
+      y: Math.random() * h * .35,
+      vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+      len: (140 + Math.random() * 140) * d, life: 0, max: .9 + Math.random() * .5
+    });
+  }
+  (function schedule() { setTimeout(() => { comet(); schedule(); }, 7000 + Math.random() * 7000); })();
+
+  let last = performance.now();
+  function frame(t) {
+    const dt = Math.min((t - last) / 1000, .05); last = t;
+    ctx.clearRect(0, 0, w, h);
+    const sy = scrollY * d;
+    ctx.fillStyle = "#cfe0ff";
+    for (const s of stars) {
+      let y = (s.y - sy * (.04 + s.z * .12)) % h; if (y < 0) y += h;
+      ctx.globalAlpha = (.18 + s.z * .5) * (.65 + .35 * Math.sin(s.p + t * .0009 * s.s));
+      ctx.beginPath(); ctx.arc(s.x, y, s.r, 0, 6.283); ctx.fill();
+    }
+    for (let i = comets.length - 1; i >= 0; i--) {
+      const k = comets[i]; k.life += dt; k.x += k.vx * dt; k.y += k.vy * dt;
+      if (k.life > k.max) { comets.splice(i, 1); continue; }
+      const a = Math.sin(Math.min(k.life / k.max, 1) * Math.PI);  // плавно появляется и гаснет
+      const sp = Math.hypot(k.vx, k.vy), tx = k.x - k.vx / sp * k.len, ty = k.y - k.vy / sp * k.len;
+      const g = ctx.createLinearGradient(k.x, k.y, tx, ty);
+      g.addColorStop(0, `rgba(255,244,225,${.9 * a})`); g.addColorStop(.25, `rgba(160,200,255,${.35 * a})`); g.addColorStop(1, "rgba(160,200,255,0)");
+      ctx.globalAlpha = 1; ctx.strokeStyle = g; ctx.lineWidth = 1.2 * d; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(k.x, k.y); ctx.lineTo(tx, ty); ctx.stroke();
+      const hg = ctx.createRadialGradient(k.x, k.y, 0, k.x, k.y, 6 * d);
+      hg.addColorStop(0, `rgba(255,240,215,${a})`); hg.addColorStop(1, "rgba(255,240,215,0)");
+      ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(k.x, k.y, 6 * d, 0, 6.283); ctx.fill();
+      ctx.fillStyle = "#cfe0ff";
+    }
+    ctx.globalAlpha = 1;
+    if (!REDUCE && !document.hidden) requestAnimationFrame(frame);
+  }
+  addEventListener("resize", resize); resize();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !REDUCE) { last = performance.now(); requestAnimationFrame(frame); } });
+  requestAnimationFrame(frame);
+  return { comet, prog };
+})();
+
+/* ---------- навигация: фон, мобильное меню, подсветка текущего раздела ---------- */
+const nav = document.getElementById("nav");
+const links = [...document.querySelectorAll('.nav__links a[href^="#"]')];
+const bar = document.querySelector(".nav__bar");
+const spySections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+const burger = document.querySelector(".nav__burger");
+if (burger) {
+  burger.addEventListener("click", () => {
+    const open = nav.classList.toggle("is-open"); burger.setAttribute("aria-expanded", open);
+  });
+  document.querySelectorAll(".nav__links a").forEach(a => a.addEventListener("click", () => {
+    nav.classList.remove("is-open"); burger.setAttribute("aria-expanded", false);
+  }));
+}
+let activeLink = null;
+function setActive(a) {
+  if (a === activeLink) return;
+  activeLink?.classList.remove("is-active");
+  activeLink = a;
+  if (a) a.classList.add("is-active");
+  if (!bar) return;
+  if (!a) { bar.classList.remove("is-on"); return; }
+  bar.style.width = a.offsetWidth - 28 + "px";
+  bar.style.transform = `translateX(${a.offsetLeft + 14}px)`;
+  bar.classList.add("is-on");
+}
+function spy() {
+  nav.classList.toggle("is-solid", "solid" in document.body.dataset || scrollY > innerHeight * 0.55);
+  if (spySections.length !== links.length) return;
+  const line = innerHeight * 0.35;
+  let cur = null;
+  spySections.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) cur = links[i]; });
+  if (scrollY > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 4) cur = links[links.length - 1];
+  setActive(cur);
+}
+addEventListener("resize", () => { const a = activeLink; activeLink = null; setActive(a); });
+
+/* ---------- появление блоков ---------- */
 const io = new IntersectionObserver(es => es.forEach(e => {
-  if (e.isIntersecting) { e.target.classList.add("is-in"); io.unobserve(e.target); }
-}), { threshold: .12 });
-document.querySelectorAll(".reveal").forEach((el, i) => {
-  el.style.transitionDelay = (i % 4) * 70 + "ms"; io.observe(el);
+  if (!e.isIntersecting) return;
+  e.target.classList.add("is-in"); io.unobserve(e.target);
+  if (e.target.classList.contains("sec-head")) sky.comet();      // вход в новый раздел — иногда пролетает комета
+}), { threshold: .15, rootMargin: "0px 0px -6% 0px" });
+document.querySelectorAll(".reveal").forEach(el => {
+  const sib = [...el.parentElement.children].filter(x => x.classList.contains("reveal"));
+  el.style.transitionDelay = Math.min(sib.indexOf(el), 5) * 80 + "ms";
+  io.observe(el);
 });
 
-document.querySelectorAll(".card").forEach(c => c.addEventListener("pointermove", e => {
+/* подсветка карточек услуг за курсором */
+document.querySelectorAll(".svc").forEach(c => c.addEventListener("pointermove", e => {
   const r = c.getBoundingClientRect();
   c.style.setProperty("--mx", e.clientX - r.left + "px");
   c.style.setProperty("--my", e.clientY - r.top + "px");
 }));
 
-const clock = document.getElementById("hudClock");
-if (clock) setInterval(() => clock.textContent = new Date().toISOString().slice(11, 19) + " UTC", 1000);
-
-/* ===== Звёзды на первом экране ===== */
-(function stars() {
-  const c = document.getElementById("stars"); if (!c) return;
+/* ---------- звёзды на первом экране ---------- */
+(function heroStars() {
+  const c = document.getElementById("heroStars"); if (!c) return;
   const ctx = c.getContext("2d"); let w, h, pts = [];
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   function resize() {
-    const r = c.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+    const r = c.getBoundingClientRect(), d = DPR();
     w = c.width = r.width * d; h = c.height = r.height * d;
-    pts = Array.from({ length: Math.round(r.width * r.height / 5500) }, () => ({
-      x: Math.random() * w, y: Math.random() * h * 0.75, r: (Math.random() * 1.1 + 0.3) * d,
-      p: Math.random() * 6.28, s: 0.4 + Math.random() * 1.2 }));
+    pts = Array.from({ length: Math.round(r.width * r.height / 5200) }, () => ({
+      x: Math.random() * w, y: Math.random() * h * .72, r: (Math.random() ** 2 * 1.2 + .35) * d,
+      p: Math.random() * 6.28, s: .3 + Math.random() }));
   }
   function draw(t) {
     ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#d8e6ff";
     for (const p of pts) {
-      ctx.globalAlpha = 0.35 + 0.4 * Math.sin(p.p + t * 0.001 * p.s);
-      ctx.fillStyle = "#cfe0ff"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill();
+      ctx.globalAlpha = .3 + .45 * (.5 + .5 * Math.sin(p.p + t * .0011 * p.s));
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
     }
-    if (!reduce) requestAnimationFrame(draw);
+    if (!REDUCE) requestAnimationFrame(draw);
   }
   addEventListener("resize", resize); resize(); requestAnimationFrame(draw);
 })();
 
-/* ===== Цветовая тема: оттенок плавно меняется по ходу прокрутки ===== */
-const PALETTE = [210];   // один синий оттенок
-let hue = 210;
-const HUE = () => hue;
-function theme() {
-  const secs = [...document.querySelectorAll(".hero, .page-head, main > section")];
-  if (!secs.length) return;
-  const y = scrollY + innerHeight * 0.45;
-  const pts = secs.map((el, i) => ({ y: el.offsetTop + el.offsetHeight / 2, h: PALETTE[i % PALETTE.length] }));
-  let target = pts[0].h;
-  if (y >= pts[pts.length - 1].y) target = pts[pts.length - 1].h;
-  else for (let i = 0; i < pts.length - 1; i++) if (y >= pts[i].y && y < pts[i + 1].y) {
-    const t = (y - pts[i].y) / (pts[i + 1].y - pts[i].y), e = t * t * (3 - 2 * t);
-    target = pts[i].h + (pts[i + 1].h - pts[i].h) * e; break;
+/* ---------- всё, что зависит от прокрутки: один проход за кадр ---------- */
+const steps = document.getElementById("steps");
+const stepItems = steps ? [...steps.querySelectorAll("li")] : [];
+const stepLine = steps ? steps.querySelector(".steps__line i") : null;
+const phones = [...document.querySelectorAll("[data-depth]")];
+let ticking = false;
+function onScroll() {
+  ticking = false;
+  spy();
+  const max = document.documentElement.scrollHeight - innerHeight;
+  sky.prog.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+
+  if (steps) {                                                 // линия этапов заполняется по мере прокрутки
+    const r = steps.getBoundingClientRect();
+    const p = Math.min(Math.max((innerHeight * .78 - r.top) / (innerHeight * .45), 0), 1);
+    if (stepLine) stepLine.style.setProperty("--p", p.toFixed(3));
+    const stacked = innerWidth <= 1020;
+    stepItems.forEach((li, i) => li.classList.toggle("is-lit",
+      stacked ? li.getBoundingClientRect().top < innerHeight * .7 : p >= (i + .15) / stepItems.length));
   }
-  hue += (target - hue) * 0.08;
-  document.documentElement.style.setProperty("--h", hue.toFixed(1));
+  if (!REDUCE) phones.forEach(ph => {                          // лёгкий параллакс телефонов в кейсе
+    const r = ph.parentElement.getBoundingClientRect();
+    const off = (r.top + r.height / 2 - innerHeight / 2) * parseFloat(ph.dataset.depth);
+    ph.style.transform = `translate3d(0,${off.toFixed(1)}px,0)`;
+  });
 }
+addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+addEventListener("resize", onScroll);
+addEventListener("load", onScroll);
+onScroll();
 
-/* ===== Фон: сеть узлов, реагирует на мышь и прокрутку ===== */
-(function bgnet() {
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const c = document.createElement("canvas"); c.id = "bgnet";
-  const prog = document.createElement("div"); prog.className = "progress";
-  const o1 = document.createElement("div"); o1.className = "orb orb--a";
-  const o2 = document.createElement("div"); o2.className = "orb orb--b";
-  document.body.prepend(c, o1, o2, prog);
-  const ctx = c.getContext("2d");
-  let w, h, d, nodes = [], mx = -999, my = -999;
-
-  function resize() {
-    d = Math.min(devicePixelRatio || 1, 2);
-    w = c.width = innerWidth * d; h = c.height = innerHeight * d;
-    const n = Math.min(110, Math.round(innerWidth * innerHeight / 14000));
-    nodes = Array.from({ length: n }, () => ({
-      x: Math.random() * w, y: Math.random() * h * 1.4,
-      vx: (Math.random() - .5) * .25 * d, vy: (Math.random() - .5) * .25 * d,
-      r: (Math.random() * 1.4 + .8) * d, z: Math.random() * .6 + .4 }));
-  }
-  addEventListener("resize", resize); resize();
-  addEventListener("pointermove", e => { mx = e.clientX * d; my = e.clientY * d; }, { passive: true });
-
-  function frame() {
-    const sy = scrollY * d;
-    ctx.clearRect(0, 0, w, h);
-    const hh = h * 1.4, L = 150 * d;
-    const pos = nodes.map(n => {
-      if (!reduce) { n.x += n.vx; n.y += n.vy; }
-      if (n.x < 0) n.x += w; if (n.x > w) n.x -= w;
-      if (n.y < 0) n.y += hh; if (n.y > hh) n.y -= hh;
-      let y = (n.y - sy * .35 * n.z) % hh; if (y < 0) y += hh;   // параллакс от прокрутки
-      return { x: n.x, y: y - h * .2, r: n.r };
-    });
-    for (let i = 0; i < pos.length; i++) {
-      const a = pos[i];
-      for (let j = i + 1; j < pos.length; j++) {
-        const b = pos[j], dx = a.x - b.x, dy = a.y - b.y, dist = Math.hypot(dx, dy);
-        if (dist < L) {
-          ctx.strokeStyle = `hsla(${HUE()},100%,66%,${(1 - dist / L) * .22})`; ctx.lineWidth = d;
-          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        }
-      }
-      const md = Math.hypot(a.x - mx, a.y - my), near = md < 200 * d;
-      if (near) {
-        ctx.strokeStyle = `hsla(${HUE() + 25},100%,72%,${(1 - md / (200 * d)) * .45})`;
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(mx, my); ctx.stroke();
-      }
-      ctx.fillStyle = near ? `hsla(${HUE() + 25},100%,75%,.95)` : `hsla(${HUE() + 10},100%,76%,.65)`;
-      ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 6.283); ctx.fill();
-    }
-    theme();
-    const max = document.documentElement.scrollHeight - innerHeight;
-    prog.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
-    if (!reduce && !document.hidden) requestAnimationFrame(frame);
-  }
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) requestAnimationFrame(frame); });
-  addEventListener("scroll", () => { if (reduce) frame(); }, { passive: true });
-  frame();
-})();
-
-/* ===== Видео Земли: старт над Турцией/Украиной, пауза вне экрана и при «уменьшить анимацию» ===== */
+/* ---------- видео Земли: старт над Украиной/Турцией, пауза вне экрана ---------- */
 (function earthVideo() {
-  const v = document.querySelector(".earth__video"); if (!v) return;
-  const START = 136;                       // секунда ролика, где в центре Чёрное море и огни Европы
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;   // остаётся постер
+  const v = document.querySelector(".earth__video"); if (!v || REDUCE) return;   // при «уменьшить анимацию» остаётся постер
+  const START = 136;                       // секунда ролика: в центре Чёрное море и огни Европы
   let inView = true;
   const play = () => { if (inView) v.play().catch(() => {}); };
   const begin = () => { v.currentTime = START; v.addEventListener("seeked", play, { once: true }); };
