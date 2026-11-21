@@ -60,7 +60,7 @@ async function askGemini(env, contents) {
   if (/2\.5/.test(model)) generationConfig.thinkingConfig = { thinkingBudget: 0 };   // быстрый ответ без «размышлений»
   const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
+    const send = () => fetch(url, {
       method: "POST", signal: ctrl.signal,
       headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
@@ -70,6 +70,8 @@ async function askGemini(env, contents) {
           .map(category => ({ category, threshold: "BLOCK_MEDIUM_AND_ABOVE" })),
       }),
     });
+    let res = await send();
+    if ([429, 500, 503].includes(res.status)) { await new Promise(r => setTimeout(r, 700)); res = await send(); }   // один повтор при перегрузке Gemini
     if (!res.ok) { console.error("Gemini HTTP", res.status, (await res.text()).slice(0, 300)); return null; }
     const data = await res.json();
     const text = data?.candidates?.[0]?.content?.parts?.filter(p => !p.thought).map(p => p.text || "").join("").trim();   // «мысли» модели пользователю не отдаём
