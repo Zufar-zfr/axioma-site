@@ -69,6 +69,25 @@ if (clock) setInterval(() => clock.textContent = new Date().toISOString().slice(
   addEventListener("resize", resize); resize(); requestAnimationFrame(draw);
 })();
 
+/* ===== Цветовая тема: оттенок плавно меняется по ходу прокрутки ===== */
+const PALETTE = [210, 165, 268, 322, 28, 188];   // синий, бирюзовый, фиолетовый, розовый, оранжевый, голубой
+let hue = 210;
+const HUE = () => hue;
+function theme() {
+  const secs = [...document.querySelectorAll(".hero, .page-head, main > section")];
+  if (!secs.length) return;
+  const y = scrollY + innerHeight * 0.45;
+  const pts = secs.map((el, i) => ({ y: el.offsetTop + el.offsetHeight / 2, h: PALETTE[i % PALETTE.length] }));
+  let target = pts[0].h;
+  if (y >= pts[pts.length - 1].y) target = pts[pts.length - 1].h;
+  else for (let i = 0; i < pts.length - 1; i++) if (y >= pts[i].y && y < pts[i + 1].y) {
+    const t = (y - pts[i].y) / (pts[i + 1].y - pts[i].y), e = t * t * (3 - 2 * t);
+    target = pts[i].h + (pts[i + 1].h - pts[i].h) * e; break;
+  }
+  hue += (target - hue) * 0.08;
+  document.documentElement.style.setProperty("--h", hue.toFixed(1));
+}
+
 /* ===== Фон: сеть узлов, реагирует на мышь и прокрутку ===== */
 (function bgnet() {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -108,18 +127,19 @@ if (clock) setInterval(() => clock.textContent = new Date().toISOString().slice(
       for (let j = i + 1; j < pos.length; j++) {
         const b = pos[j], dx = a.x - b.x, dy = a.y - b.y, dist = Math.hypot(dx, dy);
         if (dist < L) {
-          ctx.strokeStyle = `rgba(90,170,255,${(1 - dist / L) * .22})`; ctx.lineWidth = d;
+          ctx.strokeStyle = `hsla(${HUE()},100%,66%,${(1 - dist / L) * .22})`; ctx.lineWidth = d;
           ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         }
       }
       const md = Math.hypot(a.x - mx, a.y - my), near = md < 200 * d;
       if (near) {
-        ctx.strokeStyle = `rgba(125,243,255,${(1 - md / (200 * d)) * .45})`;
+        ctx.strokeStyle = `hsla(${HUE() + 25},100%,72%,${(1 - md / (200 * d)) * .45})`;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(mx, my); ctx.stroke();
       }
-      ctx.fillStyle = near ? "rgba(125,243,255,.95)" : "rgba(140,190,255,.65)";
+      ctx.fillStyle = near ? `hsla(${HUE() + 25},100%,75%,.95)` : `hsla(${HUE() + 10},100%,76%,.65)`;
       ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 6.283); ctx.fill();
     }
+    theme();
     const max = document.documentElement.scrollHeight - innerHeight;
     prog.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
     if (!reduce && !document.hidden) requestAnimationFrame(frame);
@@ -127,4 +147,72 @@ if (clock) setInterval(() => clock.textContent = new Date().toISOString().slice(
   document.addEventListener("visibilitychange", () => { if (!document.hidden) requestAnimationFrame(frame); });
   addEventListener("scroll", () => { if (reduce) frame(); }, { passive: true });
   frame();
+})();
+
+/* ===== Настоящий 3D-шар Земли: карта на сфере, вращение вокруг оси ===== */
+(function globe() {
+  const hero = document.querySelector(".hero"), canvas = document.getElementById("globe");
+  if (!hero || !canvas) return;
+  try {
+    if (typeof THREE === "undefined") throw new Error("no three");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100); camera.position.z = 5;
+
+    const tex = new THREE.TextureLoader().load("assets/earth-map.jpg", () => canvas.classList.add("is-ready"));
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const uTint = { value: new THREE.Color(0.2, 0.5, 1) };
+
+    const group = new THREE.Group(); scene.add(group);
+    group.add(new THREE.Mesh(new THREE.SphereGeometry(1, 128, 128), new THREE.ShaderMaterial({
+      uniforms: { map: { value: tex }, tint: uTint },
+      vertexShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+        void main(){ vUv=uv; vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader: `uniform sampler2D map; uniform vec3 tint; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+        void main(){
+          vec3 c=texture2D(map,vUv).rgb;
+          vec3 col=vec3(0.012,0.025,0.06)+tint*0.05+c*mix(vec3(2.0),vec3(2.0)*(0.55+tint),0.35);
+          float f=pow(1.-max(dot(normalize(vN),normalize(vV)),0.),3.5);
+          col+=tint*f*0.9;
+          gl_FragColor=vec4(col,1.);
+        }` })));
+
+    const atmo = new THREE.Mesh(new THREE.SphereGeometry(1.1, 96, 96), new THREE.ShaderMaterial({
+      uniforms: { tint: uTint }, transparent: true, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false,
+      vertexShader: `varying vec3 vN; varying vec3 vV;
+        void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader: `uniform vec3 tint; varying vec3 vN; varying vec3 vV;
+        void main(){ float d=-dot(normalize(vN),normalize(vV)); float i=pow(smoothstep(0.0,0.5,d),2.2);
+          gl_FragColor=vec4(tint,1.)*i*1.1; }` }));
+    scene.add(atmo);
+
+    group.rotation.x = -0.3; group.rotation.z = -0.08; group.rotation.y = -2.1;
+
+    function resize() {
+      const w = hero.clientWidth, h = hero.clientHeight;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+      const vh = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), vw = vh * camera.aspect;
+      const s = Math.max(vw * 0.72, vh * 0.7);
+      const topY = vh / 2 - vh * (w < 700 ? 0.58 : 0.46);
+      group.scale.setScalar(s); atmo.scale.setScalar(s); group.position.y = atmo.position.y = topY - s;
+    }
+    addEventListener("resize", resize); resize();
+
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let last = performance.now(), visible = true;
+    new IntersectionObserver(e => visible = e[0].isIntersecting).observe(hero);
+    const col = new THREE.Color();
+    (function loop(t) {
+      requestAnimationFrame(loop);
+      if (!visible) { last = t; return; }
+      const dt = (t - last) / 1000; last = t;
+      if (!reduce) group.rotation.y += dt * 0.05;          // вращение вокруг оси с запада на восток
+      col.setHSL((hue % 360) / 360, 0.95, 0.55); uTint.value.copy(col);
+      renderer.render(scene, camera);
+    })(last);
+  } catch (err) {
+    console.warn("WebGL недоступен, показываем плоское фото", err);
+    hero.classList.add("no-webgl");
+  }
 })();
